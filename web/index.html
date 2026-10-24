@@ -347,6 +347,12 @@
   .rx { font-size: 12.5px; color: var(--text-2); margin-top: 3px; overflow-wrap: anywhere; }
 
   /* ---------- toast ---------- */
+  .trip-bar { display: flex; gap: 8px; padding: 14px 18px 0; align-items: center; }
+  .trip-bar select { flex: 1; min-width: 0; margin: 0; }
+  .busy { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(0,0,0,.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  .busy-box { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 18px; padding: 22px 26px; display: flex; align-items: center; gap: 14px; font-weight: 500; box-shadow: 0 30px 60px -20px rgba(0,0,0,.8); }
+  .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--surface-3); border-top-color: #6ee7b7; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .toast {
     position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%) translateY(14px);
@@ -419,7 +425,6 @@
             <label><input type="radio" name="event" value="drive">🛣️ ระหว่างทาง</label>
             <label class="ev-only"><input type="radio" name="event" value="chargeStart">🔌 ถึงจุดชาร์จ</label>
             <label class="ev-only"><input type="radio" name="event" value="chargeEnd">🔋 ชาร์จเสร็จ</label>
-            <label class="fuel-only"><input type="radio" name="event" value="refuel">⛽ เติมน้ำมัน</label>
             <label><input type="radio" name="event" value="end">🏁 สิ้นสุด</label>
           </div>
 
@@ -458,7 +463,8 @@
             </label>
           </div>
 
-          <div id="fuelFields" class="grid fuel-only" style="margin-top:14px" hidden>
+          <label class="check fuel-only" style="margin-top:14px"><input id="hasFuel" type="checkbox"> ⛽ เติมน้ำมันด้วย (เติมตอนไหนก็ได้)</label>
+          <div id="fuelFields" class="grid fuel-only" style="margin-top:10px" hidden>
             <label class="field">
               <span class="lab">จำนวนลิตร <em>L</em></span>
               <input id="liters" class="num" type="number" step="0.01" min="0" inputmode="decimal">
@@ -494,7 +500,11 @@
   <div class="col">
     <section class="card">
       <div class="card-h"><h2 class="k-mint" data-ico="📊">ภาพรวม</h2><span id="last"></span></div>
-      <div style="padding:14px 18px 0"><select id="tripPick" aria-label="เลือกทริป"></select></div>
+      <div class="trip-bar">
+        <select id="tripPick" aria-label="เลือกทริป"></select>
+        <button id="renameTrip" class="pill-btn" type="button">✏️ ชื่อ</button>
+        <button id="delTrip" class="pill-btn" type="button">🗑️ ลบ</button>
+      </div>
       <div class="hero">
         <div>
           <div class="k" id="heroLbl">อัตราใช้ไฟเฉลี่ย</div>
@@ -596,6 +606,23 @@
   </div>
 </div>
 
+<div id="nameSheet" class="sheet" hidden>
+  <div class="sheet-bg" id="nameBg"></div>
+  <div class="sheet-panel" role="dialog" aria-label="ชื่อทริป">
+    <div class="card-h" style="padding:0 0 14px"><h2 class="k-amber" data-ico="✏️">ชื่อทริป</h2></div>
+    <label class="field"><span class="lab">ชื่อทริป (เว้นว่างเพื่อใช้ชื่อเดิม)</span><input id="nameInput" maxlength="40" placeholder="เช่น ไปเชียงใหม่"></label>
+    <div class="sheet-actions">
+      <button id="nameCancel" class="ghost-btn" type="button">ยกเลิก</button>
+      <button id="nameSave" class="btn" type="button">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ สถานะกำลังบันทึก ============ -->
+<div id="busy" class="busy" hidden>
+  <div class="busy-box"><div class="spin"></div><div id="busyText">กำลังบันทึก…</div></div>
+</div>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -667,6 +694,14 @@ function setSync(text, isErr) {
   el.textContent = text;
   el.classList.toggle('err', !!isErr);
 }
+// แสดงป๊อปอัพสถานะระหว่างเรียก API
+function showBusy(text) { $('busyText').textContent = text; $('busy').hidden = false; }
+function hideBusy() { $('busy').hidden = true; }
+async function busyCall(text, fn) {
+  showBusy(text);
+  try { return await fn(); } finally { hideBusy(); }
+}
+
 let toastTimer = null;
 function toast(text, isErr) {
   const t = $('toast');
@@ -889,7 +924,7 @@ function analyzeFuel(entries) {
 
   for (const e of sorted) {
     const odo = num(e.odo);
-    const isRef = e.event === 'refuel';
+    const isRef = num(e.liters) !== null;   // เติมน้ำมันได้ทุกประเภทบันทึก
     const evNo = isRef ? refNo + 1 : undefined;
     if (isRef) noById[e.id] = evNo;
 
@@ -939,13 +974,19 @@ function analyzeFuel(entries) {
     state = { odo, ts: e.ts, event: e.event, no: evNo };
   }
 
+  const ikm = sum(intervals.map(i => i.km));
+  const ilit = sum(intervals.map(i => i.liters));
+  const avgCons = ikm > 0 ? (ilit / ikm) * 100 : null;
+  // ช่วงที่ยังไม่มีอัตราจริง ใช้อัตราเฉลี่ยทั้งหมดประมาณ (มีเครื่องหมาย est)
+  if (avgCons !== null) {
+    segs.forEach(s => {
+      if (!s.valid) { s.cons = avgCons; s.en = (s.km * avgCons) / 100; s.valid = true; s.est = true; }
+    });
+  }
   const trips = buildTrips(sorted, segs, refs);
   const totalKm = sum(segs.map(s => s.km));
   const driveMin = sum(segs.map(s => s.minutes));
   const usedEn = sum(segs.filter(s => s.valid).map(s => s.en));
-  const ikm = sum(intervals.map(i => i.km));
-  const ilit = sum(intervals.map(i => i.liters));
-  const avgCons = ikm > 0 ? (ilit / ikm) * 100 : null;
   const priced = refs.filter(r => r.cost !== null && r.en > 0);
   const avgPrice = priced.length ? sum(priced.map(r => r.cost)) / sum(priced.map(r => r.en)) : null;
   const costed = refs.filter(r => r.cost !== null);
@@ -957,7 +998,7 @@ function analyzeFuel(entries) {
   return {
     segs, ch: refs, warn, segById, chById, noById, trips,
     byMode: byModeOf(segs),
-    points: intervals.map(i => ({ cons: i.cons, to: { ts: i.ts } })),
+    points: segs.filter(s => s.cons !== null).map(s => ({ cons: s.cons, to: s.to })),
     t: {
       totalKm, driveMin, chMin: null, usedEn, chEn, avgCons, totalCost, avgPrice,
       costPerKm: totalKm > 0 && totalCost !== null ? totalCost / totalKm : null,
@@ -980,14 +1021,16 @@ function updateEventUI() {
   $('wrapRange').hidden = isEnd;
   $('wrapMode').hidden = isEnd;
   $('chargeFields').hidden = !isEnd;
-  $('fuelFields').hidden = t !== 'refuel';
+  $('fuelFields').hidden = !$('hasFuel').checked;
   $('socLabel').textContent = t === 'chargeStart' ? 'แบตก่อนชาร์จ' : isEnd ? 'แบตหลังชาร์จ' : 'แบต';
 }
 form.querySelectorAll('input[name=event]').forEach(r => r.addEventListener('change', updateEventUI));
+$('hasFuel').addEventListener('change', updateEventUI);
 
 function resetForm() {
   ['odo', 'soc', 'range', 'trip', 'kwh', 'cost', 'fcost', 'liters', 'note'].forEach(id => ($(id).value = ''));
   $('full').checked = false;
+  $('hasFuel').checked = false;
   $('time').value = nowLocal();
   updateEventUI();
   refreshPlaceholders();
@@ -1031,7 +1074,7 @@ form.addEventListener('submit', async e => {
     entry.kwh = v('kwh') === '' ? '' : num(v('kwh'));
     entry.cost = v('cost') === '' ? '' : num(v('cost'));
   }
-  if (type === 'refuel') {
+  if (V === 'fuel' && $('hasFuel').checked) {
     const liters = num(v('liters'));
     if (liters === null || liters <= 0) return msg('กรุณาใส่จำนวนลิตร', true);
     entry.liters = liters;
@@ -1048,7 +1091,7 @@ form.addEventListener('submit', async e => {
   $('submitBtn').disabled = true;
   msg('กำลังบันทึก…');
   try {
-    applyData(await apiPost({ action: 'addEntry', entry }));
+    applyData(await busyCall('กำลังบันทึก…', () => apiPost({ action: 'addEntry', entry })));
     resetForm();
     msg('');
     toast('บันทึกแล้ว · ' + LABEL[type]);
@@ -1082,7 +1125,7 @@ $('carSave').addEventListener('click', async () => {
     ? { model, capacity: $('capacity').value, dcPrice: $('dcPrice').value }
     : { fuel_model: model };
   try {
-    applyData(await apiPost({ action: 'saveSettings', settings }));
+    applyData(await busyCall('กำลังบันทึกการตั้งค่า…', () => apiPost({ action: 'saveSettings', settings })));
     closeCar();
     toast('บันทึกการตั้งค่าแล้ว');
   } catch (err) {
@@ -1165,7 +1208,7 @@ function render() {
   if (!groups.length) selIdx = null;
   else if (selIdx === null || selIdx < 0 || selIdx >= groups.length) selIdx = groups.length - 1;
   const group = selIdx === null ? [] : groups[selIdx];
-  const opts = groups.map((g, i) => `<option value="${i}">ทริป ${i + 1} · ${fmtDate(g[0].ts)}</option>`).join('');
+  const opts = groups.map((g, i) => `<option value="${i}">${esc(g[0].tripName || 'ทริป ' + (i + 1))} · ${fmtDate(g[0].ts)}</option>`).join('');
   ['tripPick', 'routeSel', 'legSel'].forEach(id => {
     $(id).innerHTML = opts;
     if (selIdx !== null) $(id).value = String(selIdx);
@@ -1319,7 +1362,7 @@ function renderHistory(sorted, res) {
     if (num(e.range) !== null) notes.push(`จอ ${f(num(e.range), 1)} km`);
     if (num(e.trip) !== null) notes.push(`trip ${f(num(e.trip), 1)} km`);
     if (e.mode) notes.push(e.mode);
-    if (e.event === 'refuel') notes.push(num(e.full) ? 'เติมเต็ม' : 'เติมไม่เต็ม');
+    if (num(e.liters) !== null) notes.push(num(e.full) ? 'เติมเต็ม' : 'เติมไม่เต็ม');
     if (e.note) notes.push(e.note);
     const warns = res.warn[e.id];
     const d = new Date(e.ts);
@@ -1352,7 +1395,7 @@ function legHtml(s) {
         <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
         <div><span>เวลา</span><b>${fmtDur(s.minutes)}</b></div>
         <div><span>${V === 'ev' ? 'พลังงานที่ใช้' : 'น้ำมัน (ประมาณ)'}</span><b>${s.en === null ? '–' : f(s.en, 2) + ' ' + u.en}</b></div>
-        <div><span>อัตราการใช้</span><b>${s.cons === null ? '–' : f(s.cons, 1) + ' ' + u.cons}</b></div>
+        <div><span>อัตราการใช้</span><b>${s.cons === null ? '–' : (s.est ? '≈ ' : '') + f(s.cons, 1) + ' ' + u.cons}</b></div>
         <div><span>ค่าต่อ km</span><b>${s.costPerKm === null ? '–' : f(s.costPerKm, 2) + ' ฿'}</b></div>
       </div>
     </div>`;
@@ -1514,6 +1557,63 @@ function routeSvg(pts) {
   $(id).addEventListener('change', e => { selIdx = +e.target.value; render(); });
 });
 
+// ทริปที่เลือกอยู่ (เป็นรายการ entries) หรือ null
+function selGroup() {
+  const groups = groupTrips(myEntries());
+  return selIdx !== null && groups[selIdx] ? groups[selIdx] : null;
+}
+
+/* ---------- ชื่อทริป ---------- */
+let nameTarget = null;
+$('renameTrip').addEventListener('click', () => {
+  const g = selGroup();
+  if (!g) return toast('ยังไม่มีทริปให้ตั้งชื่อ', true);
+  nameTarget = g[0].id;
+  $('nameInput').value = g[0].tripName || '';
+  $('nameSheet').hidden = false;
+  $('nameInput').focus();
+});
+const closeName = () => { $('nameSheet').hidden = true; };
+$('nameCancel').addEventListener('click', closeName);
+$('nameBg').addEventListener('click', closeName);
+$('nameSave').addEventListener('click', async () => {
+  if (busy || !nameTarget) return;
+  busy = true;
+  try {
+    const name = $('nameInput').value.trim();
+    applyData(await busyCall('กำลังบันทึกชื่อ…', () => apiPost({ action: 'updateEntry', id: nameTarget, fields: { tripName: name } })));
+    closeName();
+    toast('บันทึกชื่อทริปแล้ว');
+  } catch (err) {
+    toast('บันทึกชื่อไม่สำเร็จ', true);
+  } finally { busy = false; }
+});
+
+/* ---------- ลบทริป (กดสองครั้งเพื่อยืนยัน) ---------- */
+$('delTrip').addEventListener('click', async () => {
+  const btn = $('delTrip');
+  if (busy) return;
+  const g = selGroup();
+  if (!g) return toast('ยังไม่มีทริปให้ลบ', true);
+  if (!btn.dataset.armed) {
+    btn.dataset.armed = '1';
+    btn.textContent = 'กดอีกครั้งเพื่อลบ';
+    setTimeout(() => { delete btn.dataset.armed; btn.textContent = '🗑️ ลบ'; }, 3000);
+    return;
+  }
+  delete btn.dataset.armed;
+  btn.textContent = '🗑️ ลบ';
+  busy = true;
+  try {
+    const data = await busyCall('กำลังลบทริป…', () => apiPost({ action: 'deleteMany', ids: g.map(x => x.id) }));
+    selIdx = null;
+    applyData(data);
+    toast('ลบทริปแล้ว');
+  } catch (err) {
+    toast('ลบทริปไม่สำเร็จ', true);
+  } finally { busy = false; }
+});
+
 /* ---------- ลบรายการ (กดสองครั้งเพื่อยืนยัน) ---------- */
 $('hist').addEventListener('click', async e => {
   const btn = e.target.closest('button.del');
@@ -1526,7 +1626,7 @@ $('hist').addEventListener('click', async e => {
   }
   busy = true;
   try {
-    applyData(await apiPost({ action: 'deleteEntry', id: btn.dataset.id }));
+    applyData(await busyCall('กำลังลบรายการ…', () => apiPost({ action: 'deleteEntry', id: btn.dataset.id })));
     toast('ลบแล้ว');
   } catch (err) { toast('ลบไม่สำเร็จ', true); }
   finally { busy = false; }

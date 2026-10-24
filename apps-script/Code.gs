@@ -8,7 +8,8 @@
 
 // vehicle: 'ev' | 'fuel' (ข้อมูลเก่าไม่มีค่านี้ ถือเป็น 'ev')
 // liters, full: ใช้กับการเติมน้ำมัน (full = 1 เมื่อเติมเต็มถัง)
-const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note', 'lat', 'lng', 'vehicle', 'liters', 'full'];
+// tripName: ชื่อทริป เก็บไว้ที่รายการแรกของทริปนั้น
+const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note', 'lat', 'lng', 'vehicle', 'liters', 'full', 'tripName'];
 
 // ---------- HTTP ----------
 // GET  ?action=getData
@@ -30,6 +31,8 @@ function route_(action, body) {
     else if (action === 'addEntry') data = addEntry(body.entry);
     else if (action === 'deleteEntry') data = deleteEntry(body.id);
     else if (action === 'saveSettings') data = saveSettings(body.settings);
+    else if (action === 'updateEntry') data = updateEntry(body.id, body.fields);
+    else if (action === 'deleteMany') data = deleteMany(body.ids);
     else throw new Error('unknown action: ' + action);
     return json_({ ok: true, data: data });
   } catch (err) {
@@ -49,6 +52,46 @@ function getData() {
 function addEntry(entry) {
   return withLock_(() => {
     entriesSheet_().appendRow(ENTRY_HEADERS.map(h => (entry[h] === null || entry[h] === undefined ? '' : entry[h])));
+    return getData();
+  });
+}
+
+// แก้ไขบางคอลัมน์ของรายการหนึ่ง (เช่น ชื่อทริป)
+function updateEntry(id, fields) {
+  return withLock_(() => {
+    const s = entriesSheet_();
+    const last = s.getLastRow();
+    if (last >= 2) {
+      const ids = s.getRange(2, 1, last - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(id)) {
+          Object.keys(fields || {}).forEach(k => {
+            const col = ENTRY_HEADERS.indexOf(k);
+            if (col >= 0) {
+              const v = fields[k];
+              s.getRange(i + 2, col + 1).setValue(v === null || v === undefined ? '' : v);
+            }
+          });
+          break;
+        }
+      }
+    }
+    return getData();
+  });
+}
+
+// ลบหลายรายการพร้อมกัน (ใช้ลบทั้งทริป)
+function deleteMany(ids) {
+  const set = new Set((ids || []).map(String));
+  return withLock_(() => {
+    const s = entriesSheet_();
+    const last = s.getLastRow();
+    if (last >= 2) {
+      const vals = s.getRange(2, 1, last - 1, 1).getValues();
+      for (let i = vals.length - 1; i >= 0; i--) {
+        if (set.has(String(vals[i][0]))) s.deleteRow(i + 2);
+      }
+    }
     return getData();
   });
 }

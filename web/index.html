@@ -322,7 +322,7 @@
   .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
 
   /* ---------- เส้นทาง ---------- */
-  #routeSel {
+  #routeSel, #tripPick, #legSel {
     display: block; width: 100%; height: 42px; padding: 0 12px; margin-bottom: 14px;
     background: var(--surface-3); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px;
     font-size: 16px; appearance: none; -webkit-appearance: none;
@@ -401,7 +401,7 @@
   <nav class="tabs">
     <button class="back-btn" data-home type="button">← เลือกประเภท</button>
     <button class="tabbtn on" data-go="main" type="button">🏠 หน้าหลัก</button>
-    <button class="tabbtn" data-go="calc" type="button">💰 คิดค่า</button>
+    <button class="tabbtn" data-go="calc" type="button">📏 แยกช่วง</button>
   </nav>
 </header>
 
@@ -494,6 +494,7 @@
   <div class="col">
     <section class="card">
       <div class="card-h"><h2 class="k-mint" data-ico="📊">ภาพรวม</h2><span id="last"></span></div>
+      <div style="padding:14px 18px 0"><select id="tripPick" aria-label="เลือกทริป"></select></div>
       <div class="hero">
         <div>
           <div class="k" id="heroLbl">อัตราใช้ไฟเฉลี่ย</div>
@@ -563,7 +564,8 @@
 <main data-tab="calc" hidden>
   <div class="col" style="grid-column:1/-1">
     <section class="card">
-      <div class="card-h"><h2 class="k-teal" data-ico="💰">คิดค่าแต่ละช่วง</h2><span id="legCount"></span></div>
+      <div class="card-h"><h2 class="k-teal" data-ico="📏">แยกช่วงของทริป</h2><span id="legCount"></span></div>
+      <div style="padding:16px 18px 0"><select id="legSel" aria-label="เลือกทริป"></select></div>
       <div class="stats" style="padding-top:16px">
         <div class="stat"><div class="k">ระยะรวม</div><div class="v" id="cKm">–</div></div>
         <div class="stat"><div class="k">อัตราการใช้</div><div class="v" id="cCons">–</div></div>
@@ -637,6 +639,7 @@ let D = { entries: [], settings: {} };
 let busy = false;
 let lastTrips = [];
 let lastRes = null;
+let selIdx = null;                  // ทริปที่เลือกอยู่ (ลำดับในรายการทริป)
 const U = () => UNIT[V];
 const vOf = e => e.vehicle || 'ev';
 const myEntries = () => D.entries.filter(e => vOf(e) === V);
@@ -1099,24 +1102,50 @@ document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click'
 }));
 
 /* ---------- ตัววาด ---------- */
-function statTiles(t) {
+// สถิติของทริปหนึ่ง (รวมจากช่วงและการเติม/ชาร์จที่อยู่ในทริปนั้น)
+function groupStats(group, res) {
+  const ids = new Set(group.map(e => e.id));
+  const ss = res.segs.filter(s => ids.has(s.id));
+  const cs = res.ch.filter(c => ids.has(c.id));
+  const valid = ss.filter(s => s.valid);
+  const km = sum(ss.map(s => s.km));
+  const vkm = sum(valid.map(s => s.km));
+  const used = sum(valid.map(s => s.en));
+  const cons = vkm > 0 ? (used / vkm) * 100 : null;
+  const costed = cs.filter(c => c.cost !== null);
+  const cost = costed.length ? sum(costed.map(c => c.cost)) : null;
+  const cmp = ss.filter(s => s.screenFull != null && s.actualFull != null);
+  return {
+    km, mins: sum(ss.map(s => s.minutes)), used, cons,
+    chEn: sum(cs.filter(c => c.en !== null).map(c => c.en)),
+    chMin: V === 'ev' ? sum(cs.map(c => c.minutes)) : null,
+    cost,
+    costPerKm: km > 0 && cost !== null ? cost / km : null,
+    kmPerL: cons ? 100 / cons : null,
+    screenAvg: avg(cmp.map(s => s.screenFull)),
+    actualAvg: avg(cmp.map(s => s.actualFull)),
+    missing: cs.length - costed.length,
+  };
+}
+
+function statTiles(g) {
   if (V === 'ev') {
     return [
-      ['พลังงานที่ใช้', f(t.usedEn, 1), 'kWh'],
-      ['ชาร์จรวม', f(t.chEn, 1), 'kWh'],
-      ['ค่าชาร์จรวม', t.totalCost === null ? '–' : f(t.totalCost, 0), '฿'],
-      ['ค่าไฟต่อ km', f(t.estCostPerKm, 2), '฿'],
-      ['ค่าจริงต่อ km', f(t.costPerKm, 2), '฿'],
-      ['ประสิทธิภาพชาร์จ', t.eff === null ? '–' : f(t.eff * 100, 0), t.eff === null ? '' : '%'],
+      ['เวลาเดินทาง', fmtDur(g.mins), ''],
+      ['บาท/กม', f(g.costPerKm, 2), '฿'],
+      ['ชาร์จรวม', f(g.chEn, 1), 'kWh'],
+      ['ชาร์จรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'],
+      ['พลังงานที่ใช้', f(g.used, 1), 'kWh'],
+      ['เวลาชาร์จ', fmtDur(g.chMin), ''],
     ];
   }
   return [
-    ['น้ำมันที่ใช้ (ประมาณ)', f(t.usedEn, 1), 'ลิตร'],
-    ['เติมรวม', f(t.chEn, 1), 'ลิตร'],
-    ['ค่าน้ำมันรวม', t.totalCost === null ? '–' : f(t.totalCost, 0), '฿'],
-    ['ค่าน้ำมันต่อ km', f(t.estCostPerKm, 2), '฿'],
-    ['ค่าจริงต่อ km', f(t.costPerKm, 2), '฿'],
-    ['km / ลิตร', t.avgCons ? f(100 / t.avgCons, 1) : '–', 'km/L'],
+    ['เวลาเดินทาง', fmtDur(g.mins), ''],
+    ['บาท/กม', f(g.costPerKm, 2), '฿'],
+    ['เติมรวม', f(g.chEn, 1), 'ลิตร'],
+    ['ค่าน้ำมันรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'],
+    ['น้ำมันที่ใช้ (ประมาณ)', f(g.used, 1), 'ลิตร'],
+    ['km / ลิตร', g.kmPerL ? f(g.kmPerL, 1) : '–', 'km/L'],
   ];
 }
 
@@ -1130,40 +1159,52 @@ function render() {
 
   const res = V === 'ev' ? analyzeEV(ents, D.settings || {}) : analyzeFuel(ents);
   lastRes = res;
-  const t = res.t;
-  const sorted = [...ents].sort((a, b) => new Date(b.ts) - new Date(a.ts));
-  const last = sorted[0];
-  const lastOdo = last ? num(last.odo) : null;
 
-  $('heroLbl').textContent = V === 'ev' ? 'อัตราใช้ไฟเฉลี่ย' : 'อัตราใช้น้ำมันเฉลี่ย';
-  $('last').textContent = last ? fmtDate(last.ts) + (lastOdo !== null ? ' · ' + f(lastOdo, 1) + ' km' : '') : '';
+  // เลือกทริป: ค่าเริ่มต้นคือทริปล่าสุด (ภาพรวม แยกช่วง และเส้นทางใช้ทริปเดียวกัน)
+  const groups = groupTrips(ents);
+  if (!groups.length) selIdx = null;
+  else if (selIdx === null || selIdx < 0 || selIdx >= groups.length) selIdx = groups.length - 1;
+  const group = selIdx === null ? [] : groups[selIdx];
+  const opts = groups.map((g, i) => `<option value="${i}">ทริป ${i + 1} · ${fmtDate(g[0].ts)}</option>`).join('');
+  ['tripPick', 'routeSel', 'legSel'].forEach(id => {
+    $(id).innerHTML = opts;
+    if (selIdx !== null) $(id).value = String(selIdx);
+  });
+
+  const gs = groupStats(group, res);
+  const sorted = [...ents].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const firstTs = group.length ? group[0].ts : null;
+  const lastTs = group.length ? group[group.length - 1].ts : null;
+
+  $('last').textContent = firstTs ? `${fmtDate(firstTs)} – ${fmtTime(lastTs)}` : '';
   $('count').textContent = sorted.length ? `${sorted.length} รายการ` : '';
-  $('bigCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>${u.cons}</small>`;
-  $('bigKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
-  $('stats').innerHTML = statTiles(t).map(([k, v, unit]) =>
+  $('heroLbl').textContent = V === 'ev' ? 'อัตราใช้ไฟ · ทริปนี้' : 'อัตราใช้น้ำมัน · ทริปนี้';
+  $('bigCons').innerHTML = `${gs.cons === null ? '–' : f(gs.cons, 1)}<small>${u.cons}</small>`;
+  $('bigKm').innerHTML = `${gs.km ? f(gs.km, 1) : '–'}<small>km</small>`;
+  $('stats').innerHTML = statTiles(gs).map(([k, v, unit]) =>
     `<div class="stat"><div class="k">${k}</div><div class="v">${v}${unit ? `<small>${unit}</small>` : ''}</div></div>`).join('');
 
   // เทียบระยะบนจอกับระยะจริง (เฉพาะรถไฟฟ้า)
   if (V === 'ev') {
-    const maxKm = Math.max(t.screenAvg || 0, t.actualAvg || 0, 1);
-    $('barScreen').style.width = t.screenAvg ? (t.screenAvg / maxKm * 100) + '%' : '0%';
-    $('barActual').style.width = t.actualAvg ? (t.actualAvg / maxKm * 100) + '%' : '0%';
-    $('valScreen').textContent = t.screenAvg ? f(t.screenAvg, 0) + ' km' : '–';
-    $('valActual').textContent = t.actualAvg ? f(t.actualAvg, 0) + ' km' : '–';
-    $('gapNote').textContent = t.gapPct === null
+    const maxKm = Math.max(gs.screenAvg || 0, gs.actualAvg || 0, 1);
+    $('barScreen').style.width = gs.screenAvg ? (gs.screenAvg / maxKm * 100) + '%' : '0%';
+    $('barActual').style.width = gs.actualAvg ? (gs.actualAvg / maxKm * 100) + '%' : '0%';
+    $('valScreen').textContent = gs.screenAvg ? f(gs.screenAvg, 0) + ' km' : '–';
+    $('valActual').textContent = gs.actualAvg ? f(gs.actualAvg, 0) + ' km' : '–';
+    const gap = gs.screenAvg && gs.actualAvg ? ((gs.screenAvg - gs.actualAvg) / gs.actualAvg) * 100 : null;
+    $('gapNote').textContent = gap === null
       ? 'ต้องมีช่วงที่มีทั้งระยะบนจอและแบต% เพื่อเทียบ'
-      : (t.gapPct >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(t.gapPct), 1) + '%'
-        + (t.missing ? ` · ไม่มีค่าชาร์จ ${t.missing} ครั้ง` : '');
+      : (gap >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(gap), 1) + '%'
+        + (gs.missing ? ` · ไม่มีค่าชาร์จ ${gs.missing} ครั้ง` : '');
   }
-  $('timeLine').innerHTML = `เวลาขับรวม <b>${fmtDur(t.driveMin)}</b>`
-    + (t.chMin !== null ? ` · เวลาชาร์จรวม <b>${fmtDur(t.chMin)}</b>` : '');
+  $('timeLine').textContent = '';
 
-  renderChart(res.points);
-  renderRoute(res);
+  renderChart(res.points.filter(p => firstTs && p.to.ts >= firstTs && p.to.ts <= lastTs));
+  renderRoute(res, group);
   renderTrips(res.trips);
   renderModes(res.byMode);
   renderHistory(sorted, res);
-  renderLegs(res);
+  renderLegs(res, group, gs);
 }
 
 function renderChart(pts) {
@@ -1340,20 +1381,20 @@ function chHtml(c) {
     </div>`;
 }
 
-function renderLegs(res) {
-  const t = res.t;
+function renderLegs(res, group, gs) {
   const u = U();
-  $('cKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
-  $('cCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>${u.cons}</small>`;
-  $('cCostKm').innerHTML = `${t.estCostPerKm === null ? '–' : f(t.estCostPerKm, 2)}<small>฿/km</small>`;
+  const ids = new Set(group.map(e => e.id));
+  $('cKm').innerHTML = `${gs.km ? f(gs.km, 1) : '–'}<small>km</small>`;
+  $('cCons').innerHTML = `${gs.cons === null ? '–' : f(gs.cons, 1)}<small>${u.cons}</small>`;
+  $('cCostKm').innerHTML = `${gs.costPerKm === null ? '–' : f(gs.costPerKm, 2)}<small>฿/km</small>`;
   const items = [
-    ...res.segs.filter(s => s.km > 0).map(s => ({ ts: s.to.ts, html: legHtml(s) })),
-    ...res.ch.map(c => ({ ts: c.ts, html: chHtml(c) })),
+    ...res.segs.filter(s => ids.has(s.id) && s.km > 0).map(s => ({ ts: s.to.ts, html: legHtml(s) })),
+    ...res.ch.filter(c => ids.has(c.id)).map(c => ({ ts: c.ts, html: chHtml(c) })),
   ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
   $('legCount').textContent = items.length ? `${items.length} รายการ` : '';
   $('legs').innerHTML = items.length
     ? items.map(i => i.html).join('')
-    : '<div class="empty">ยังไม่มีช่วงที่คิดค่าได้ ต้องมีบันทึกอย่างน้อย 2 รายการ</div>';
+    : '<div class="empty">ทริปนี้ยังไม่มีช่วงที่แยกได้</div>';
 }
 
 /* ---------- เส้นทาง ---------- */
@@ -1393,23 +1434,13 @@ function detailLines(p, res) {
   return { title, sub, extra };
 }
 
-function renderRoute(res) {
-  const groups = groupTrips(myEntries());
-  const sel = $('routeSel');
-  const prev = sel.value;
-  if (!groups.length) {
-    sel.innerHTML = '';
-    $('routeBody').innerHTML = '<div class="empty">ยังไม่มีทริป</div>';
-    return;
-  }
-  sel.innerHTML = groups.map((g, i) => `<option value="${i}">ทริป ${i + 1} · ${fmtDate(g[0].ts)}</option>`).join('');
-  const idx = prev !== '' && groups[+prev] ? +prev : groups.length - 1;
-  sel.value = String(idx);
-  const group = groups[idx];
+function renderRoute(res, group) {
   const pts = group.filter(e => num(e.lat) !== null && num(e.lng) !== null);
-  $('routeBody').innerHTML = pts.length
-    ? routeSummary(group, res) + '<div id="routeMap" class="route-map"></div>' + routeList(group, res)
-    : '<div class="empty">ทริปนี้ยังไม่มีพิกัด GPS<br>บันทึกใหม่หลังอนุญาตตำแหน่งแล้วจะขึ้นเส้นทาง</div>';
+  $('routeBody').innerHTML = !group.length
+    ? '<div class="empty">ยังไม่มีทริป</div>'
+    : pts.length
+      ? routeSummary(group, res) + '<div id="routeMap" class="route-map"></div>' + routeList(group, res)
+      : '<div class="empty">ทริปนี้ยังไม่มีพิกัด GPS<br>บันทึกใหม่หลังอนุญาตตำแหน่งแล้วจะขึ้นเส้นทาง</div>';
   if (pts.length) showRoute(pts, res);
 }
 
@@ -1478,7 +1509,10 @@ function routeSvg(pts) {
     + `<path d="${path}" class="route-line"/>${dots}</svg>`;
 }
 
-$('routeSel').addEventListener('change', () => { if (lastRes) renderRoute(lastRes); });
+// เปลี่ยนทริปจากเมนูไหนก็ได้ ทุกส่วนจะตามกัน
+['tripPick', 'routeSel', 'legSel'].forEach(id => {
+  $(id).addEventListener('change', e => { selIdx = +e.target.value; render(); });
+});
 
 /* ---------- ลบรายการ (กดสองครั้งเพื่อยืนยัน) ---------- */
 $('hist').addEventListener('click', async e => {
@@ -1506,6 +1540,7 @@ function route() {
   $('app').hidden = name === 'home';
   if (name !== 'home') {
     V = name;
+    selIdx = null;
     document.body.dataset.v = V;
     $('brandName').textContent = U().name;
     document.title = U().name;

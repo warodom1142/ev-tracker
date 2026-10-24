@@ -6,6 +6,8 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090c">
 <title>EV Tracker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -306,6 +308,9 @@
     background: var(--surface-3); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px;
     font: inherit; font-size: 16px; appearance: none; -webkit-appearance: none;
   }
+  .route-map { height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+  .rnum { background: transparent; border: 0; box-shadow: none; color: #08090c; font: 600 12px var(--mono); padding: 0; }
+  .rnum::before { display: none; }
   .route-svg { width: 100%; height: auto; display: block; }
   .route-bg { fill: var(--surface-2); stroke: var(--line); }
   .route-line { fill: none; stroke: #7dd3fc; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
@@ -1098,8 +1103,29 @@ function renderRoute(res) {
   sel.value = String(idx);
   const pts = groups[idx].filter(e => num(e.lat) !== null && num(e.lng) !== null);
   $('routeBody').innerHTML = pts.length
-    ? routeSvg(pts) + routeList(groups[idx], res)
+    ? '<div id="routeMap" class="route-map"></div>' + routeList(groups[idx], res)
     : '<div class="empty">ทริปนี้ยังไม่มีพิกัด GPS<br>บันทึกใหม่หลังอนุญาตตำแหน่งแล้วจะขึ้นเส้นทาง</div>';
+  if (pts.length) showRoute(pts);
+}
+
+// แผนที่ OpenStreetMap ผ่าน Leaflet (ไม่ต้องใช้ key) ถ้าโหลดไม่ได้จะใช้ SVG แทน
+function showRoute(pts) {
+  const el = $('routeMap');
+  if (!el) return;
+  if (!window.L) { el.outerHTML = routeSvg(pts); return; }
+  const ll = pts.map(p => [num(p.lat), num(p.lng)]);
+  const map = L.map(el, { attributionControl: true });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+  }).addTo(map);
+  L.polyline(ll, { color: '#7dd3fc', weight: 4, opacity: .9 }).addTo(map);
+  pts.forEach((p, i) => {
+    L.circleMarker(ll[i], { radius: 10, color: '#08090c', weight: 2, fillColor: EV_COLOR[p.event] || '#fff', fillOpacity: 1 })
+      .bindTooltip(String(i + 1), { permanent: true, direction: 'center', className: 'rnum' })
+      .addTo(map);
+  });
+  map.fitBounds(L.latLngBounds(ll).pad(0.25), { maxZoom: 16 });
 }
 
 function routeSvg(pts) {

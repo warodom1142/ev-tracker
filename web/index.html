@@ -327,15 +327,83 @@
   .rs { font-size: 12.5px; color: var(--muted); font-family: var(--mono); margin-top: 2px; overflow-wrap: anywhere; }
   .rx { font-size: 12.5px; color: var(--text-2); margin-top: 3px; overflow-wrap: anywhere; }
 
+  /* ---------- หน้าแรก: เลือกประเภทรถ ---------- */
+  .home, .soon { min-height: 100vh; display: grid; place-items: center; padding: 40px 18px; }
+  .home-in { width: 100%; max-width: 720px; }
+  .home-hero { text-align: center; margin-bottom: 28px; }
+  .home-logo { font-size: 46px; line-height: 1; }
+  .home-hero h1 { margin: 12px 0 6px; font-size: 26px; letter-spacing: -.02em; }
+  .home-hero p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .pick-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 640px) { .pick-grid { grid-template-columns: 1fr 1fr; } }
+  .pick {
+    appearance: none; -webkit-appearance: none; font: inherit; color: var(--text); text-align: left;
+    width: 100%; display: grid; gap: 10px; padding: 26px 22px; cursor: pointer;
+    border-radius: 24px; border: 1px solid var(--line-2);
+    background: linear-gradient(160deg, var(--c1), var(--surface) 70%);
+    box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .8);
+    transition: transform .14s, border-color .14s;
+  }
+  .pick:hover { transform: translateY(-2px); border-color: var(--c-accent); }
+  .pick:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+  .pick.ev { --c1: rgba(110, 231, 183, .2); --c-accent: #6ee7b7; }
+  .pick.fuel { --c1: rgba(252, 211, 77, .2); --c-accent: #fcd34d; }
+  .pick-ico { font-size: 40px; line-height: 1; }
+  .pick-t { font-size: 22px; font-weight: 700; }
+  .pick-d { font-size: 14px; color: var(--text-2); }
+  .pick-go { font-size: 13.5px; font-weight: 600; margin-top: 6px; color: var(--c-accent); }
+  .soon-in { text-align: center; max-width: 420px; }
+  .soon-ico { font-size: 46px; line-height: 1; }
+  .soon h2 { font-size: 22px; margin: 12px 0 8px; }
+  .soon p { color: var(--muted); margin: 0 0 16px; font-size: 14.5px; }
+
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
 
+<!-- ============ หน้าแรก: เลือกประเภทรถ ============ -->
+<section id="home" class="home">
+  <div class="home-in">
+    <div class="home-hero">
+      <div class="home-logo">🚗</div>
+      <h1>เลือกประเภทรถ</h1>
+      <p>บันทึกการขับ ระยะ และค่าใช้จ่ายของรถแต่ละประเภทแยกกัน</p>
+    </div>
+    <div class="pick-grid">
+      <button class="pick ev" data-go-screen="ev" type="button">
+        <span class="pick-ico">⚡</span>
+        <span class="pick-t">รถไฟฟ้า</span>
+        <span class="pick-d">บันทึกแบต % ชาร์จ kWh และค่าไฟ</span>
+        <span class="pick-go">เข้าใช้งาน →</span>
+      </button>
+      <button class="pick fuel" data-go-screen="fuel" type="button">
+        <span class="pick-ico">⛽</span>
+        <span class="pick-t">รถน้ำมัน</span>
+        <span class="pick-d">บันทึกการเติมลิตรและราคา คำนวณ km/L</span>
+        <span class="pick-go">เข้าใช้งาน →</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ รถน้ำมัน: กำลังทำ ============ -->
+<section id="fuelSoon" class="soon" hidden>
+  <div class="soon-in">
+    <div class="soon-ico">⛽</div>
+    <h2>รถน้ำมัน</h2>
+    <p>กำลังทำ: บันทึกการเติมลิตรและราคา เลขไมล์ และคำนวณ km/L</p>
+    <button class="pill-btn" data-home type="button">← เลือกประเภทใหม่</button>
+  </div>
+</section>
+
+<!-- ============ รถไฟฟ้า: หน้าเดิม ============ -->
+<div id="appEv" hidden>
 <header class="top">
   <div class="top-in">
     <div class="brand">EV Tracker<small id="carName">รถของฉัน</small></div>
     <div class="top-r">
+      <button class="pill-btn" data-home type="button">← ประเภท</button>
       <span id="sync" class="sync">กำลังเชื่อมต่อ…</span>
       <button id="carBtn" class="pill-btn" type="button">⚙️ ตั้งค่ารถ</button>
     </div>
@@ -508,6 +576,8 @@
     </section>
   </div>
 </main>
+
+</div>
 
 <!-- ============ ป็อปอัพตั้งค่ารถ ============ -->
 <div id="carSheet" class="sheet" hidden>
@@ -1276,7 +1346,21 @@ $('hist').addEventListener('click', async e => {
   finally { busy = false; }
 });
 
+/* ---------- หน้าแรก / การนำทาง (ใช้ #ev, #fuel) ---------- */
+function route() {
+  const h = location.hash.replace('#', '');
+  const name = h === 'ev' || h === 'fuel' ? h : 'home';
+  $('home').hidden = name !== 'home';
+  $('appEv').hidden = name !== 'ev';
+  $('fuelSoon').hidden = name !== 'fuel';
+  window.scrollTo({ top: 0 });
+}
+window.addEventListener('hashchange', route);
+document.querySelectorAll('[data-go-screen]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.goScreen; }));
+document.querySelectorAll('[data-home]').forEach(b => b.addEventListener('click', () => { location.hash = ''; }));
+
 /* ---------- init ---------- */
+route();
 resetForm();
 load();
 </script>

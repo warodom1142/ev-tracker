@@ -3,22 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f5f5f4">
+<meta name="theme-color" content="#111111">
 <title>EV Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f5f4;
-    --card: #ffffff;
-    --ink: #1c1917;
-    --ink-2: #44403c;
-    --muted: #78716c;
-    --line: #e7e5e4;
-    --line-2: #d6d3d1;
-    --radius: 16px;
-    --shadow: 0 1px 2px rgba(28, 25, 23, .04), 0 8px 24px -12px rgba(28, 25, 23, .10);
+    --ink: #111111;
+    --paper: #efefed;
+    --white: #ffffff;
+    --mute: #5f5f5f;
+    --rule: 2px solid #111111;
     --font: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   }
@@ -26,175 +22,186 @@
   [hidden] { display: none !important; }
   html, body { margin: 0; }
   body {
-    background: var(--bg); color: var(--ink);
-    font-family: var(--font); font-size: 15px; line-height: 1.55;
+    background: var(--paper); color: var(--ink);
+    font-family: var(--font); font-size: 15px; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   button, input { font: inherit; }
 
-  /* ---------- header ---------- */
+  /* ---------- top bar ---------- */
   .top {
     position: sticky; top: 0; z-index: 5;
-    background: rgba(245, 245, 244, .86);
-    backdrop-filter: saturate(1.4) blur(10px);
-    -webkit-backdrop-filter: saturate(1.4) blur(10px);
-    border-bottom: 1px solid var(--line);
+    background: var(--ink); color: var(--white);
     padding-top: env(safe-area-inset-top, 0px);
   }
   .top-in {
-    max-width: 1080px; margin: 0 auto; padding: 14px 20px;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    max-width: 1100px; margin: 0 auto; padding: 16px 16px;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
   }
-  .brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
-  .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; margin-top: -2px; }
-  .sync { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .sync.err { color: var(--ink); font-weight: 600; }
+  .brand { font-weight: 800; font-size: 22px; letter-spacing: -.01em; line-height: 1; }
+  .brand small { display: block; font-weight: 500; font-size: 13px; color: #bdbdbd; margin-top: 6px; }
+  .sync { font-size: 12px; color: #bdbdbd; white-space: nowrap; font-family: var(--mono); }
+  .sync.err { color: var(--white); font-weight: 700; text-decoration: underline; }
 
   /* ---------- layout ---------- */
   main {
-    max-width: 1080px; margin: 0 auto; padding: 22px 20px 64px;
-    display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr);
+    max-width: 1100px; margin: 0 auto; padding: 16px 16px 72px;
+    display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr);
   }
   @media (min-width: 900px) {
-    main { grid-template-columns: 380px minmax(0, 1fr); align-items: start; }
-    .side-form { position: sticky; top: 84px; }
+    main { grid-template-columns: 380px minmax(0, 1fr); align-items: start; padding-top: 22px; }
+    .side-form { position: sticky; top: 92px; }
   }
+  .col { display: grid; gap: 16px; min-width: 0; }
 
-  .card {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: var(--radius); box-shadow: var(--shadow);
-    padding: 20px; min-width: 0;
+  /* ---------- card ---------- */
+  .card { background: var(--white); border: var(--rule); padding: 0; min-width: 0; }
+  .card-h {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 16px; border-bottom: var(--rule);
   }
-  .card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  .card-h h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.005em; }
-  .card-h span { color: var(--muted); font-size: 12px; }
+  .card-h h2 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+  .card-h span { font-size: 12px; color: var(--mute); font-family: var(--mono); }
+  .card-b { padding: 16px; }
 
-  /* ---------- form ---------- */
-  .seg {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
-    background: #efeeec; border-radius: 12px; padding: 4px; margin-bottom: 16px;
-  }
+  /* ---------- segmented ---------- */
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: var(--rule); margin-bottom: 16px; }
   .seg label {
-    position: relative; text-align: center; padding: 8px 4px; border-radius: 9px;
-    font-size: 13.5px; color: var(--muted); cursor: pointer; user-select: none;
-    transition: background .15s, color .15s;
+    position: relative; text-align: center; padding: 12px 4px;
+    font-size: 14px; font-weight: 700; cursor: pointer; user-select: none;
+    border-left: 2px solid var(--ink); background: var(--white);
   }
-  .seg label:hover { color: var(--ink-2); }
+  .seg label:first-child { border-left: 0; }
   .seg input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
-  .seg label:has(input:checked) { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
-  .seg label:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .seg label:has(input:checked) { background: var(--ink); color: var(--white); }
+  .seg label:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: 2px; }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 12px; }
+  /* ---------- fields ---------- */
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
   .grid > * { min-width: 0; }
   .span2 { grid-column: 1 / -1; }
-  .field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--muted); font-weight: 500; }
-  .field .unit { font-weight: 400; color: var(--line-2); margin-left: 2px; }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .lab {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  }
+  .lab em { font-style: normal; font-weight: 500; color: var(--mute); text-transform: none; letter-spacing: 0; font-size: 12px; }
 
   input {
-    width: 100%; min-width: 0; height: 42px; padding: 0 12px;
-    color: var(--ink); background: #fff; border: 1px solid var(--line-2); border-radius: 10px;
-    font-size: 15px; transition: border-color .15s, box-shadow .15s;
+    display: block; width: 100%; min-width: 0; max-width: 100%;
+    height: 48px; padding: 0 12px;
+    color: var(--ink); background: var(--white);
+    border: 2px solid var(--ink); border-radius: 0;
+    font-size: 16px; -webkit-appearance: none; appearance: none;
   }
-  input::placeholder { color: #a8a29e; }
-  input:hover { border-color: #a8a29e; }
-  input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(28,25,23,.08); }
-  input.num { font-family: var(--mono); font-size: 14.5px; }
+  input::placeholder { color: #9a9a9a; }
+  input:focus { outline: 3px solid var(--ink); outline-offset: 0; }
+  input.num { font-family: var(--mono); font-weight: 600; }
+  input[type=datetime-local] { font-family: var(--mono); font-weight: 600; font-size: 15px; }
 
+  /* ---------- button ---------- */
   .btn {
-    width: 100%; height: 46px; border: 0; border-radius: 12px;
-    background: var(--ink); color: #fff; font-weight: 600; font-size: 15px;
-    cursor: pointer; transition: transform .05s, opacity .15s;
+    width: 100%; height: 54px; border: 2px solid var(--ink); border-radius: 0;
+    background: var(--ink); color: var(--white);
+    font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
   }
-  .btn:hover { opacity: .9; }
-  .btn:active { transform: scale(.99); }
-  .btn:disabled { opacity: .5; cursor: default; }
-  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-  .btn.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line-2); height: 40px; font-weight: 500; width: auto; padding: 0 14px; }
+  .btn:active { background: #333; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
-  .more { margin-top: 14px; border-top: 1px dashed var(--line-2); padding-top: 14px; }
-  .more summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; }
-  .more summary::-webkit-details-marker { display: none; }
-  .more[open] summary { margin-bottom: 12px; color: var(--ink-2); }
+  details.more { margin-top: 16px; border-top: 2px solid var(--ink); padding-top: 14px; }
+  details.more summary { cursor: pointer; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; list-style: none; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more[open] summary { margin-bottom: 14px; }
 
-  .form-msg { font-size: 13px; color: var(--muted); min-height: 20px; margin-top: 10px; text-align: center; }
-  .form-msg.err { color: var(--ink); font-weight: 600; }
+  .form-msg { font-size: 13px; color: var(--mute); min-height: 20px; margin: 12px 0 0; text-align: center; }
+  .form-msg.err { color: var(--ink); font-weight: 800; }
 
-  /* ---------- car strip ---------- */
-  .car { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .car .field input { height: 38px; }
-  @media (max-width: 560px) { .car { grid-template-columns: 1fr; } }
+  /* ---------- car ---------- */
+  .car { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .car .grid { gap: 14px; }
+  .car input { height: 44px; }
 
   /* ---------- summary ---------- */
-  .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .hero .big { font-size: 44px; font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; font-family: var(--mono); }
-  .hero .big-u { font-size: 13px; color: var(--muted); margin-top: 6px; }
-  .hero .side { text-align: right; font-size: 13px; color: var(--muted); }
-  .hero .side b { display: block; color: var(--ink); font-size: 22px; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); border-bottom: var(--rule); }
+  .hero > div { padding: 18px 16px; min-width: 0; }
+  .hero > div + div { border-left: var(--rule); }
+  .hero .k { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .hero .big { font-family: var(--mono); font-weight: 600; font-size: 52px; line-height: 1; letter-spacing: -.03em; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .hero .big small { font-size: 14px; font-family: var(--font); font-weight: 600; letter-spacing: 0; color: var(--mute); margin-left: 6px; }
+  .hero .v { font-family: var(--mono); font-weight: 600; font-size: 30px; line-height: 1; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .hero .v small { font-size: 13px; font-family: var(--font); font-weight: 600; color: var(--mute); margin-left: 4px; }
 
-  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 18px; border-top: 1px solid var(--line); }
-  .stat { padding: 14px 0 0; min-width: 0; }
-  .stat + .stat { padding-left: 14px; border-left: 1px solid var(--line); }
-  .stat .k { font-size: 12px; color: var(--muted); }
-  .stat .v { font-size: 19px; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; margin-top: 2px; overflow-wrap: anywhere; }
-  .stat .v small { font-size: 12px; font-weight: 400; color: var(--muted); font-family: var(--font); margin-left: 3px; }
-  @media (max-width: 560px) { .stats { grid-template-columns: 1fr 1fr; } .stat:nth-child(3) { padding-left: 0; border-left: 0; } }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat { padding: 14px 16px; min-width: 0; border-bottom: var(--rule); }
+  .stat:nth-child(3n+2), .stat:nth-child(3n+3) { border-left: var(--rule); }
+  .stat .k { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .stat .v { font-family: var(--mono); font-weight: 600; font-size: 19px; margin-top: 4px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .stat .v small { font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--mute); margin-left: 3px; }
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat:nth-child(3n+2), .stat:nth-child(3n+3) { border-left: 0; }
+    .stat:nth-child(2n) { border-left: var(--rule); }
+    .hero .big { font-size: 44px; }
+  }
 
-  .range-cmp { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 10px; }
-  .bar-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 72px; gap: 10px; align-items: center; font-size: 13px; }
-  .bar-row .lbl { color: var(--muted); }
-  .bar-row .num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
-  .bar { height: 8px; border-radius: 99px; background: #efeeec; overflow: hidden; }
-  .bar i { display: block; height: 100%; background: var(--ink); border-radius: 99px; transition: width .4s ease; }
-  .bar-row.alt .bar i { background: var(--line-2); }
-  .cmp-note { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .cmp { padding: 14px 16px; display: grid; gap: 12px; }
+  .bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; }
+  .bar-row .lbl { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+  .bar-row .num { font-family: var(--mono); font-weight: 600; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { grid-column: 1 / -1; height: 12px; border: 2px solid var(--ink); background: var(--white); }
+  .bar i { display: block; height: 100%; background: var(--ink); width: 0%; transition: width .35s ease; }
+  .bar-row.alt .bar i { background: repeating-linear-gradient(45deg, var(--ink) 0 4px, transparent 4px 8px); }
+  .cmp-note { font-size: 13px; color: var(--mute); margin: 0; }
 
   /* ---------- chart ---------- */
-  .chart { width: 100%; height: 150px; display: block; }
-  .chart .grid-line { stroke: var(--line); stroke-width: 1; }
-  .chart .axis-t { fill: var(--muted); font-size: 11px; font-family: var(--mono); }
-  .chart .trace { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-  .chart .dot { fill: #fff; stroke: var(--ink); stroke-width: 2; }
-  .chart .area { fill: url(#fade); }
+  .chart-wrap { padding: 12px 8px 4px; }
+  .chart { width: 100%; height: 160px; display: block; }
+  .chart .grid-line { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 4; opacity: .35; }
+  .chart .axis-t { fill: var(--mute); font-size: 11px; font-family: var(--mono); }
+  .chart .trace { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: square; }
+  .chart .dot { fill: var(--white); stroke: var(--ink); stroke-width: 2.5; }
+  .chart .area { fill: var(--ink); fill-opacity: .08; }
 
-  /* ---------- modes ---------- */
-  .mode-list { display: grid; gap: 0; }
-  .mode-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
-  .mode-row:first-child { border-top: 0; padding-top: 0; }
-  .mode-row .n { font-weight: 600; }
-  .mode-row .s { color: var(--muted); font-size: 12.5px; grid-column: 1 / -1; }
-  .mode-row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+  /* ---------- rows (modes / history) ---------- */
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 16px; border-top: 2px solid var(--ink); }
+  .row:first-child { border-top: 0; }
+  .row .t { font-weight: 800; font-size: 14px; }
+  .row .m { font-family: var(--mono); font-weight: 600; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+  .row .s { grid-column: 1 / -1; font-size: 13px; color: var(--mute); font-family: var(--mono); }
 
-  /* ---------- history ---------- */
-  .hist { display: grid; }
-  .item { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
-  .item:first-child { border-top: 0; padding-top: 4px; }
-  .item .when { font-size: 12.5px; color: var(--muted); font-family: var(--mono); line-height: 1.35; }
-  .item .when b { display: block; color: var(--ink); font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: .02em; }
-  .item .main { min-width: 0; }
-  .item .title { font-weight: 600; font-size: 14.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .item .title small { font-family: var(--font); font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 4px; }
-  .item .sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
-  .item .note { color: var(--muted); font-size: 12.5px; margin-top: 2px; overflow-wrap: anywhere; }
-  .item .flag { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--ink); background: #efeeec; border-radius: 6px; padding: 1px 7px; }
-  .item .del { background: none; border: 0; color: var(--muted); font-size: 12.5px; cursor: pointer; padding: 4px; height: auto; width: auto; text-decoration: underline; text-underline-offset: 3px; }
-  .item .del:hover { color: var(--ink); }
-  .chip { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 8px; margin-right: 6px; vertical-align: 1px; }
-  .chip.dc { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .empty { text-align: center; color: var(--muted); padding: 28px 0; font-size: 14px; }
+  .hist-item { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 0 14px; padding: 14px 16px; border-top: 2px solid var(--ink); }
+  .hist-item:first-child { border-top: 0; }
+  .when { font-family: var(--mono); font-size: 12px; color: var(--mute); line-height: 1.4; }
+  .when b { display: block; font-family: var(--font); font-size: 13px; font-weight: 800; color: var(--ink); text-transform: uppercase; }
+  .hist-main { min-width: 0; }
+  .hist-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .hist-title { font-family: var(--mono); font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .hist-title small { font-family: var(--font); font-size: 12px; color: var(--mute); margin-left: 4px; font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; border: 2px solid var(--ink); padding: 1px 7px; }
+  .tag.dc { background: var(--ink); color: var(--white); }
+  .hist-line { font-size: 13px; font-family: var(--mono); margin-top: 4px; overflow-wrap: anywhere; }
+  .hist-note { font-size: 12.5px; color: var(--mute); margin-top: 3px; overflow-wrap: anywhere; }
+  .flag { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 800; background: var(--ink); color: var(--white); padding: 1px 7px; }
+  .del { margin-top: 8px; background: none; border: 0; padding: 0; color: var(--ink); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; height: auto; }
 
-  /* ---------- toast ---------- */
+  .empty { padding: 24px 16px; text-align: center; color: var(--mute); font-size: 14px; }
+
+  /* ---------- toast + notice ---------- */
   .toast {
-    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px);
-    background: var(--ink); color: #fff; font-size: 14px; padding: 10px 16px; border-radius: 999px;
-    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 20; max-width: calc(100% - 32px);
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,.4);
+    position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink); color: var(--white); font-weight: 700; font-size: 14px;
+    padding: 12px 18px; border: 2px solid var(--ink);
+    opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 20;
+    max-width: calc(100% - 32px);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.err { background: #fff; color: var(--ink); border: 1px solid var(--ink); }
+  .toast.err { background: var(--white); color: var(--ink); }
 
-  .notice { max-width: 1080px; margin: 16px auto 0; padding: 0 20px; }
-  .notice div { background: #fff; border: 1px dashed var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
+  .notice { max-width: 1100px; margin: 16px auto 0; padding: 0 16px; }
+  .notice div { background: var(--white); border: 2px dashed var(--ink); padding: 12px 14px; font-size: 14px; }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -203,115 +210,125 @@
 
 <header class="top">
   <div class="top-in">
-    <div class="brand">EV Tracker<small id="carName">รถของฉัน</small></div>
+    <div class="brand">EV TRACKER<small id="carName">รถของฉัน</small></div>
     <div id="sync" class="sync">กำลังเชื่อมต่อ…</div>
   </div>
 </header>
 
-<div id="configNotice" class="notice" hidden><div>ยังไม่ได้ตั้งค่าลิงก์ Apps Script ให้แก้บรรทัด <code>API_URL</code> ในไฟล์นี้ก่อน</div></div>
+<div id="configNotice" class="notice" hidden><div>ยังไม่ได้ตั้งค่าลิงก์ Apps Script ให้แก้บรรทัด <b>API_URL</b> ในไฟล์นี้ก่อน</div></div>
 
 <main>
-  <aside class="side-form">
+  <aside class="side-form col">
     <section class="card">
       <div class="card-h"><h2>บันทึกใหม่</h2><span id="clockHint"></span></div>
+      <div class="card-b">
+        <form id="form" autocomplete="off">
+          <div class="seg" role="radiogroup" aria-label="ประเภทการบันทึก">
+            <label><input type="radio" name="event" value="start" checked>เริ่มต้น</label>
+            <label><input type="radio" name="event" value="drive">ระหว่างทาง</label>
+            <label><input type="radio" name="event" value="charge">ชาร์จ DC</label>
+          </div>
 
-      <form id="form" autocomplete="off">
-        <div class="seg" role="radiogroup" aria-label="ประเภทการบันทึก">
-          <label><input type="radio" name="event" value="start" checked>เริ่มต้น</label>
-          <label><input type="radio" name="event" value="drive">ระหว่างทาง</label>
-          <label><input type="radio" name="event" value="charge">ชาร์จ DC</label>
-        </div>
-
-        <div class="grid">
-          <label class="field span2">เวลา
-            <input id="time" type="datetime-local" required>
-          </label>
-          <label class="field">เลขไมล์<span class="unit">km</span>
-            <input id="odo" class="num" type="number" step="0.1" min="0" inputmode="decimal" required>
-          </label>
-          <label class="field"><span id="socLabel">แบต</span>
-            <input id="soc" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal" placeholder="%" required>
-          </label>
-          <label class="field">ระยะบนจอ<span class="unit">km</span>
-            <input id="range" class="num" type="number" step="0.1" min="0" inputmode="decimal">
-          </label>
-          <label class="field">โหมดขับ
-            <input id="mode" list="modes" placeholder="Eco">
-          </label>
-        </div>
-        <datalist id="modes"><option>Eco</option><option>Normal</option><option>Sport</option><option>Comfort</option><option>Snow</option></datalist>
-
-        <div id="chargeFields" class="grid" style="margin-top:12px" hidden>
-          <label class="field">แบตหลังชาร์จ<span class="unit">%</span>
-            <input id="socAfter" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal">
-          </label>
-          <label class="field">kWh จากตู้<span class="unit">ถ้ามี</span>
-            <input id="kwh" class="num" type="number" step="0.01" min="0" inputmode="decimal">
-          </label>
-          <label class="field span2">ค่าชาร์จ ฿<span class="unit">ถ้ามี</span>
-            <input id="cost" class="num" type="number" step="0.01" min="0" inputmode="decimal">
-          </label>
-        </div>
-
-        <details class="more">
-          <summary>ตัวเลขเพิ่มเติม (Trip meter, หมายเหตุ)</summary>
           <div class="grid">
-            <label class="field">Trip meter<span class="unit">km</span>
-              <input id="trip" class="num" type="number" step="0.1" min="0" inputmode="decimal">
+            <label class="field span2">
+              <span class="lab">เวลา</span>
+              <input id="time" type="datetime-local" required>
             </label>
-            <label class="field">หมายเหตุ
-              <input id="note" placeholder="เช่น แอร์เปิด">
+            <label class="field">
+              <span class="lab">เลขไมล์ <em>km</em></span>
+              <input id="odo" class="num" type="number" step="0.1" min="0" inputmode="decimal" required>
+            </label>
+            <label class="field">
+              <span class="lab"><span id="socLabel">แบต</span> <em>%</em></span>
+              <input id="soc" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal" required>
+            </label>
+            <label class="field">
+              <span class="lab">ระยะบนจอ <em>km</em></span>
+              <input id="range" class="num" type="number" step="0.1" min="0" inputmode="decimal">
+            </label>
+            <label class="field">
+              <span class="lab">โหมดขับ</span>
+              <input id="mode" list="modes" placeholder="Eco">
             </label>
           </div>
-        </details>
+          <datalist id="modes"><option>Eco</option><option>Normal</option><option>Sport</option><option>Comfort</option><option>Snow</option></datalist>
 
-        <div style="margin-top:16px"><button id="submitBtn" class="btn" type="submit">บันทึก</button></div>
-        <p id="formMsg" class="form-msg"></p>
-      </form>
+          <div id="chargeFields" class="grid" style="margin-top:14px" hidden>
+            <label class="field">
+              <span class="lab">แบตหลังชาร์จ <em>%</em></span>
+              <input id="socAfter" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal">
+            </label>
+            <label class="field">
+              <span class="lab">kWh จากตู้ <em>ถ้ามี</em></span>
+              <input id="kwh" class="num" type="number" step="0.01" min="0" inputmode="decimal">
+            </label>
+            <label class="field span2">
+              <span class="lab">ค่าชาร์จ ฿ <em>ถ้ามี</em></span>
+              <input id="cost" class="num" type="number" step="0.01" min="0" inputmode="decimal">
+            </label>
+          </div>
+
+          <details class="more">
+            <summary>เพิ่มเติม: Trip meter / หมายเหตุ</summary>
+            <div class="grid">
+              <label class="field">
+                <span class="lab">Trip meter <em>km</em></span>
+                <input id="trip" class="num" type="number" step="0.1" min="0" inputmode="decimal">
+              </label>
+              <label class="field">
+                <span class="lab">หมายเหตุ</span>
+                <input id="note" placeholder="เช่น แอร์เปิด">
+              </label>
+            </div>
+          </details>
+
+          <div style="margin-top:18px"><button id="submitBtn" class="btn" type="submit">บันทึก</button></div>
+          <p id="formMsg" class="form-msg"></p>
+        </form>
+      </div>
     </section>
 
-    <section class="card" style="margin-top:18px">
+    <section class="card">
       <div class="card-h"><h2>รถ</h2><span>ตั้งครั้งเดียว</span></div>
-      <div class="car">
-        <label class="field">รุ่น<input id="model" placeholder="Tesla Model 3"></label>
-        <label class="field">ความจุแบต<span class="unit">kWh</span><input id="capacity" class="num" type="number" step="0.1" min="0" inputmode="decimal"></label>
-        <label class="field">ราคา DC<span class="unit">฿/kWh</span><input id="dcPrice" class="num" type="number" step="0.01" min="0" inputmode="decimal"></label>
+      <div class="card-b car">
+        <label class="field"><span class="lab">รุ่น</span><input id="model" placeholder="Tesla Model 3"></label>
+        <div class="grid">
+          <label class="field"><span class="lab">ความจุ <em>kWh</em></span><input id="capacity" class="num" type="number" step="0.1" min="0" inputmode="decimal"></label>
+          <label class="field"><span class="lab">ราคา DC <em>฿/kWh</em></span><input id="dcPrice" class="num" type="number" step="0.01" min="0" inputmode="decimal"></label>
+        </div>
       </div>
     </section>
   </aside>
 
-  <div style="display:grid;gap:18px;min-width:0">
+  <div class="col">
     <section class="card">
       <div class="card-h"><h2>ภาพรวม</h2><span id="last"></span></div>
       <div class="hero">
         <div>
-          <div class="big" id="bigCons">–</div>
-          <div class="big-u">kWh / 100 km · อัตราใช้ไฟเฉลี่ย</div>
+          <div class="k">อัตราใช้ไฟเฉลี่ย</div>
+          <div class="big" id="bigCons">–<small>kWh/100km</small></div>
         </div>
-        <div class="side">
-          ระยะรวม
-          <b id="bigKm">–</b>
+        <div>
+          <div class="k">ระยะรวม</div>
+          <div class="v" id="bigKm">–<small>km</small></div>
         </div>
       </div>
       <div class="stats">
-        <div class="stat"><div class="k">พลังงานที่ใช้</div><div class="v" id="sEnergy">–<small>kWh</small></div></div>
-        <div class="stat"><div class="k">ชาร์จรวม</div><div class="v" id="sCharged">–<small>kWh</small></div></div>
-        <div class="stat"><div class="k">ค่าชาร์จรวม</div><div class="v" id="sCost">–<small>฿</small></div></div>
-        <div class="stat"><div class="k">ค่าไฟต่อ km</div><div class="v" id="sEst">–<small>฿</small></div></div>
-        <div class="stat"><div class="k">ค่าจริงต่อ km</div><div class="v" id="sCostKm">–<small>฿</small></div></div>
-        <div class="stat"><div class="k">ประสิทธิภาพชาร์จ</div><div class="v" id="sEff">–<small>%</small></div></div>
+        <div class="stat"><div class="k">พลังงานที่ใช้</div><div class="v" id="sEnergy">–</div></div>
+        <div class="stat"><div class="k">ชาร์จรวม</div><div class="v" id="sCharged">–</div></div>
+        <div class="stat"><div class="k">ค่าชาร์จรวม</div><div class="v" id="sCost">–</div></div>
+        <div class="stat"><div class="k">ค่าไฟต่อ km</div><div class="v" id="sEst">–</div></div>
+        <div class="stat"><div class="k">ค่าจริงต่อ km</div><div class="v" id="sCostKm">–</div></div>
+        <div class="stat"><div class="k">ประสิทธิภาพชาร์จ</div><div class="v" id="sEff">–</div></div>
       </div>
-
-      <div class="range-cmp">
+      <div class="cmp">
         <div class="bar-row">
-          <div class="lbl">ระยะเต็มแบต จอ</div>
-          <div class="bar"><i id="barScreen" style="width:0%"></i></div>
-          <div class="num" id="valScreen">–</div>
+          <span class="lbl">ระยะเต็มแบต · จอ</span><span class="num" id="valScreen">–</span>
+          <div class="bar"><i id="barScreen"></i></div>
         </div>
         <div class="bar-row alt">
-          <div class="lbl">ระยะเต็มแบต จริง</div>
-          <div class="bar"><i id="barActual" style="width:0%"></i></div>
-          <div class="num" id="valActual">–</div>
+          <span class="lbl">ระยะเต็มแบต · จริง</span><span class="num" id="valActual">–</span>
+          <div class="bar"><i id="barActual"></i></div>
         </div>
         <p class="cmp-note" id="gapNote"></p>
       </div>
@@ -319,17 +336,19 @@
 
     <section class="card">
       <div class="card-h"><h2>อัตราใช้ไฟรายช่วง</h2><span id="chartHint"></span></div>
-      <svg id="chart" class="chart" viewBox="0 0 600 150" preserveAspectRatio="none" role="img" aria-label="กราฟอัตราใช้ไฟ"></svg>
+      <div class="chart-wrap">
+        <svg id="chart" class="chart" viewBox="0 0 600 160" preserveAspectRatio="none" role="img" aria-label="กราฟอัตราใช้ไฟ"></svg>
+      </div>
     </section>
 
     <section class="card">
       <div class="card-h"><h2>แยกตามโหมดขับ</h2></div>
-      <div id="modes" class="mode-list"></div>
+      <div id="modes"></div>
     </section>
 
     <section class="card">
       <div class="card-h"><h2>ประวัติ</h2><span id="count"></span></div>
-      <div id="hist" class="hist"></div>
+      <div id="hist"></div>
     </section>
   </div>
 </main>
@@ -338,7 +357,7 @@
 
 <script>
 /* =========================================================
-   ตั้งค่า: วางลิงก์ Web app จาก Apps Script ตรงนี้
+   ตั้งค่า: ลิงก์ Web app จาก Apps Script (ลงท้ายด้วย /exec)
    ========================================================= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyNs5F_4gKsvEwIagsyD69asw-g63Ws9F8SlSuqsn23WS8z7DqnGXd8JqlUlAXMsD7TUQ/exec';
 
@@ -393,11 +412,11 @@ function toast(text, isErr) {
 function applyData(d) {
   D = d;
   render();
-  setSync('ซิงก์แล้ว · ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
+  setSync('ซิงก์ ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
 }
 
 async function load() {
-  if (API_URL.startsWith('PASTE')) { $('configNotice').hidden = false; setSync('ยังไม่ได้ตั้งค่า', true); return; }
+  if (API_URL.startsWith('PASTE')) { $('configNotice').hidden = false; setSync('ยังไม่ตั้งค่า', true); return; }
   setSync('กำลังโหลด…');
   try { applyData(await apiGet()); }
   catch (err) { setSync('โหลดไม่สำเร็จ', true); toast('โหลดข้อมูลไม่สำเร็จ: ' + err.message, true); }
@@ -591,12 +610,12 @@ function render() {
   const sorted = [...D.entries].sort((a, b) => new Date(b.ts) - new Date(a.ts));
   const last = sorted[0];
 
-  $('last').textContent = last ? `ล่าสุด ${fmtDate(last.ts)} · ${f(last.odo, 1)} km` : '';
+  $('last').textContent = last ? `${fmtDate(last.ts)} · ${f(last.odo, 1)} km` : '';
   $('count').textContent = sorted.length ? `${sorted.length} รายการ` : '';
   if (last) $('odo').placeholder = 'ล่าสุด ' + f(last.odo, 1);
 
-  $('bigCons').textContent = t.avgCons === null ? '–' : f(t.avgCons, 1);
-  $('bigKm').textContent = t.totalKm ? f(t.totalKm, 1) + ' km' : '–';
+  $('bigCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>kWh/100km</small>`;
+  $('bigKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
 
   setStat('sEnergy', f(t.energyKwh, 1), 'kWh');
   setStat('sCharged', f(t.chKwh, 1), 'kWh');
@@ -622,11 +641,10 @@ function render() {
 
 function renderChart(pts) {
   const svg = $('chart');
-  const W = 600, H = 150, padL = 36, padR = 12, padT = 14, padB = 22;
+  const W = 600, H = 160, padL = 40, padR = 12, padT = 14, padB = 24;
   if (pts.length < 2) {
-    svg.innerHTML = '';
     $('chartHint').textContent = pts.length ? 'ต้องมีอย่างน้อย 2 ช่วง' : '';
-    if (!pts.length) svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" class="axis-t">ยังไม่มีข้อมูลพอให้วาดกราฟ</text>`;
+    svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" class="axis-t">ยังไม่มีข้อมูลพอให้วาดกราฟ</text>`;
     return;
   }
   $('chartHint').textContent = `${pts.length} ช่วง`;
@@ -640,16 +658,10 @@ function renderChart(pts) {
   const area = `${path} L${x(pts.length - 1).toFixed(1)},${H - padB} L${x(0).toFixed(1)},${H - padB} Z`;
   const ticks = [hi - pad, (hi + lo) / 2, lo + pad];
   svg.innerHTML = `
-    <defs>
-      <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1c1917" stop-opacity=".10"/>
-        <stop offset="100%" stop-color="#1c1917" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
     ${ticks.map(t => `<line class="grid-line" x1="${padL}" x2="${W - padR}" y1="${y(t)}" y2="${y(t)}"/><text class="axis-t" x="4" y="${y(t) + 4}">${f(t, 1)}</text>`).join('')}
     <path class="area" d="${area}"/>
     <path class="trace" d="${path}"/>
-    ${pts.map((p, i) => `<circle class="dot" cx="${x(i)}" cy="${y(p.cons)}" r="3.5"/>`).join('')}
+    ${pts.map((p, i) => `<circle class="dot" cx="${x(i)}" cy="${y(p.cons)}" r="4"/>`).join('')}
     <text class="axis-t" x="${padL}" y="${H - 6}">${fmtDate(pts[0].ts)}</text>
     <text class="axis-t" x="${W - padR}" y="${H - 6}" text-anchor="end">${fmtDate(pts[pts.length - 1].ts)}</text>`;
 }
@@ -657,9 +669,9 @@ function renderChart(pts) {
 function renderModes(rows) {
   $('modes').innerHTML = rows.length
     ? rows.map(m => `
-      <div class="mode-row">
-        <div class="n">${esc(m.mode)}</div>
-        <div class="v">${f(m.cons, 1)} <span style="font-weight:400;color:var(--muted);font-size:12px">kWh/100km</span></div>
+      <div class="row">
+        <div class="t">${esc(m.mode)}</div>
+        <div class="m">${f(m.cons, 1)}<span style="font-family:var(--font);font-weight:600;font-size:12px;color:var(--mute)"> kWh/100km</span></div>
         <div class="s">${f(m.km, 1)} km · ${f(m.kwh, 2)} kWh</div>
       </div>`).join('')
     : '<div class="empty">ยังไม่มีข้อมูลตามโหมด</div>';
@@ -682,16 +694,18 @@ function renderHistory(sorted, res) {
     const warns = res.warn[e.id];
     const d = new Date(e.ts);
     return `
-      <div class="item">
+      <div class="hist-item">
         <div class="when"><b>${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</b>${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</div>
-        <div class="main">
-          <div class="title">${f(e.odo, 1)}<small>km · ${socTxt}</small></div>
-          <div class="sub"><span class="chip ${e.event === 'charge' ? 'dc' : ''}">${E[e.event] || e.event}</span></div>
-          ${parts.map(p => `<div class="sub">${p}</div>`).join('')}
-          ${notes.length ? `<div class="note">${esc(notes.join(' · '))}</div>` : ''}
+        <div class="hist-main">
+          <div class="hist-top">
+            <div class="hist-title">${f(e.odo, 1)}<small>km · ${socTxt}</small></div>
+            <span class="tag ${e.event === 'charge' ? 'dc' : ''}">${E[e.event] || e.event}</span>
+          </div>
+          ${parts.map(p => `<div class="hist-line">${p}</div>`).join('')}
+          ${notes.length ? `<div class="hist-note">${esc(notes.join(' · '))}</div>` : ''}
           ${warns ? `<span class="flag">${warns.join(', ')}</span>` : ''}
+          <div><button class="del" data-id="${esc(e.id)}">ลบ</button></div>
         </div>
-        <div><button class="del" data-id="${esc(e.id)}">ลบ</button></div>
       </div>`;
   }).join('');
 }

@@ -1,13 +1,45 @@
-/** EV Tracker — Apps Script ต่อกับ Google Sheet ที่ใช้เป็นฐานข้อมูล */
+/**
+ * EV Tracker — Apps Script เป็น API ให้หน้าเว็บ (web/index.html) เรียกใช้
+ * ข้อมูลเก็บใน Google Sheet ของไฟล์นี้: ชีท "entries" และ "settings"
+ *
+ * Deploy: Deploy → New deployment → Web app
+ *   Execute as: Me · Who has access: Anyone
+ */
 
 const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note'];
 
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('EV Tracker')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+// ---------- HTTP ----------
+// GET  ?action=getData
+// POST text/plain body เป็น JSON: { action, ...payload }
+function doGet(e) {
+  const action = (e && e.parameter && e.parameter.action) || 'getData';
+  return route_(action, {});
 }
 
+function doPost(e) {
+  const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+  return route_(body.action, body);
+}
+
+function route_(action, body) {
+  try {
+    let data;
+    if (action === 'getData') data = getData();
+    else if (action === 'addEntry') data = addEntry(body.entry);
+    else if (action === 'deleteEntry') data = deleteEntry(body.id);
+    else if (action === 'saveSettings') data = saveSettings(body.settings);
+    else throw new Error('unknown action: ' + action);
+    return json_({ ok: true, data: data });
+  } catch (err) {
+    return json_({ ok: false, error: String(err) });
+  }
+}
+
+function json_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ---------- data ----------
 function getData() {
   return { entries: readEntries_(), settings: readSettings_() };
 }

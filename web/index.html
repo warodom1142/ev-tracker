@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f4">
+<title>EV Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f5f4;
+    --card: #ffffff;
+    --ink: #1c1917;
+    --ink-2: #44403c;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --line-2: #d6d3d1;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(28, 25, 23, .04), 0 8px 24px -12px rgba(28, 25, 23, .10);
+    --font: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  button, input { font: inherit; }
+
+  /* ---------- header ---------- */
+  .top {
+    position: sticky; top: 0; z-index: 5;
+    background: rgba(245, 245, 244, .86);
+    backdrop-filter: saturate(1.4) blur(10px);
+    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .top-in {
+    max-width: 1080px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
+  .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; margin-top: -2px; }
+  .sync { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .sync.err { color: var(--ink); font-weight: 600; }
+
+  /* ---------- layout ---------- */
+  main {
+    max-width: 1080px; margin: 0 auto; padding: 22px 20px 64px;
+    display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 900px) {
+    main { grid-template-columns: 380px minmax(0, 1fr); align-items: start; }
+    .side-form { position: sticky; top: 84px; }
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px; min-width: 0;
+  }
+  .card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .card-h h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.005em; }
+  .card-h span { color: var(--muted); font-size: 12px; }
+
+  /* ---------- form ---------- */
+  .seg {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+    background: #efeeec; border-radius: 12px; padding: 4px; margin-bottom: 16px;
+  }
+  .seg label {
+    position: relative; text-align: center; padding: 8px 4px; border-radius: 9px;
+    font-size: 13.5px; color: var(--muted); cursor: pointer; user-select: none;
+    transition: background .15s, color .15s;
+  }
+  .seg label:hover { color: var(--ink-2); }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+  .seg label:has(input:checked) { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
+  .seg label:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 12px; }
+  .grid > * { min-width: 0; }
+  .span2 { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .field .unit { font-weight: 400; color: var(--line-2); margin-left: 2px; }
+
+  input {
+    width: 100%; min-width: 0; height: 42px; padding: 0 12px;
+    color: var(--ink); background: #fff; border: 1px solid var(--line-2); border-radius: 10px;
+    font-size: 15px; transition: border-color .15s, box-shadow .15s;
+  }
+  input::placeholder { color: #a8a29e; }
+  input:hover { border-color: #a8a29e; }
+  input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(28,25,23,.08); }
+  input.num { font-family: var(--mono); font-size: 14.5px; }
+
+  .btn {
+    width: 100%; height: 46px; border: 0; border-radius: 12px;
+    background: var(--ink); color: #fff; font-weight: 600; font-size: 15px;
+    cursor: pointer; transition: transform .05s, opacity .15s;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:active { transform: scale(.99); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .btn.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line-2); height: 40px; font-weight: 500; width: auto; padding: 0 14px; }
+
+  .more { margin-top: 14px; border-top: 1px dashed var(--line-2); padding-top: 14px; }
+  .more summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; }
+  .more summary::-webkit-details-marker { display: none; }
+  .more[open] summary { margin-bottom: 12px; color: var(--ink-2); }
+
+  .form-msg { font-size: 13px; color: var(--muted); min-height: 20px; margin-top: 10px; text-align: center; }
+  .form-msg.err { color: var(--ink); font-weight: 600; }
+
+  /* ---------- car strip ---------- */
+  .car { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .car .field input { height: 38px; }
+  @media (max-width: 560px) { .car { grid-template-columns: 1fr; } }
+
+  /* ---------- summary ---------- */
+  .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .hero .big { font-size: 44px; font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+  .hero .big-u { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .hero .side { text-align: right; font-size: 13px; color: var(--muted); }
+  .hero .side b { display: block; color: var(--ink); font-size: 22px; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 18px; border-top: 1px solid var(--line); }
+  .stat { padding: 14px 0 0; min-width: 0; }
+  .stat + .stat { padding-left: 14px; border-left: 1px solid var(--line); }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .stat .v { font-size: 19px; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; margin-top: 2px; overflow-wrap: anywhere; }
+  .stat .v small { font-size: 12px; font-weight: 400; color: var(--muted); font-family: var(--font); margin-left: 3px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: 1fr 1fr; } .stat:nth-child(3) { padding-left: 0; border-left: 0; } }
+
+  .range-cmp { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 72px; gap: 10px; align-items: center; font-size: 13px; }
+  .bar-row .lbl { color: var(--muted); }
+  .bar-row .num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .bar { height: 8px; border-radius: 99px; background: #efeeec; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--ink); border-radius: 99px; transition: width .4s ease; }
+  .bar-row.alt .bar i { background: var(--line-2); }
+  .cmp-note { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+  /* ---------- chart ---------- */
+  .chart { width: 100%; height: 150px; display: block; }
+  .chart .grid-line { stroke: var(--line); stroke-width: 1; }
+  .chart .axis-t { fill: var(--muted); font-size: 11px; font-family: var(--mono); }
+  .chart .trace { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .dot { fill: #fff; stroke: var(--ink); stroke-width: 2; }
+  .chart .area { fill: url(#fade); }
+
+  /* ---------- modes ---------- */
+  .mode-list { display: grid; gap: 0; }
+  .mode-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .mode-row:first-child { border-top: 0; padding-top: 0; }
+  .mode-row .n { font-weight: 600; }
+  .mode-row .s { color: var(--muted); font-size: 12.5px; grid-column: 1 / -1; }
+  .mode-row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+
+  /* ---------- history ---------- */
+  .hist { display: grid; }
+  .item { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .item:first-child { border-top: 0; padding-top: 4px; }
+  .item .when { font-size: 12.5px; color: var(--muted); font-family: var(--mono); line-height: 1.35; }
+  .item .when b { display: block; color: var(--ink); font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+  .item .main { min-width: 0; }
+  .item .title { font-weight: 600; font-size: 14.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .item .title small { font-family: var(--font); font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 4px; }
+  .item .sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+  .item .note { color: var(--muted); font-size: 12.5px; margin-top: 2px; overflow-wrap: anywhere; }
+  .item .flag { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--ink); background: #efeeec; border-radius: 6px; padding: 1px 7px; }
+  .item .del { background: none; border: 0; color: var(--muted); font-size: 12.5px; cursor: pointer; padding: 4px; height: auto; width: auto; text-decoration: underline; text-underline-offset: 3px; }
+  .item .del:hover { color: var(--ink); }
+  .chip { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 8px; margin-right: 6px; vertical-align: 1px; }
+  .chip.dc { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 0; font-size: 14px; }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; font-size: 14px; padding: 10px 16px; border-radius: 999px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 20; max-width: calc(100% - 32px);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { background: #fff; color: var(--ink); border: 1px solid var(--ink); }
+
+  .notice { max-width: 1080px; margin: 16px auto 0; padding: 0 20px; }
+  .notice div { background: #fff; border: 1px dashed var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">EV Tracker<small id="carName">รถของฉัน</small></div>
+    <div id="sync" class="sync">กำลังเชื่อมต่อ…</div>
+  </div>
+</header>
+
+<div id="configNotice" class="notice" hidden><div>ยังไม่ได้ตั้งค่าลิงก์ Apps Script ให้แก้บรรทัด <code>API_URL</code> ในไฟล์นี้ก่อน</div></div>
+
+<main>
+  <aside class="side-form">
+    <section class="card">
+      <div class="card-h"><h2>บันทึกใหม่</h2><span id="clockHint"></span></div>
+
+      <form id="form" autocomplete="off">
+        <div class="seg" role="radiogroup" aria-label="ประเภทการบันทึก">
+          <label><input type="radio" name="event" value="start" checked>เริ่มต้น</label>
+          <label><input type="radio" name="event" value="drive">ระหว่างทาง</label>
+          <label><input type="radio" name="event" value="charge">ชาร์จ DC</label>
+        </div>
+
+        <div class="grid">
+          <label class="field span2">เวลา
+            <input id="time" type="datetime-local" required>
+          </label>
+          <label class="field">เลขไมล์<span class="unit">km</span>
+            <input id="odo" class="num" type="number" step="0.1" min="0" inputmode="decimal" required>
+          </label>
+          <label class="field"><span id="socLabel">แบต</span>
+            <input id="soc" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal" placeholder="%" required>
+          </label>
+          <label class="field">ระยะบนจอ<span class="unit">km</span>
+            <input id="range" class="num" type="number" step="0.1" min="0" inputmode="decimal">
+          </label>
+          <label class="field">โหมดขับ
+            <input id="mode" list="modes" placeholder="Eco">
+          </label>
+        </div>
+        <datalist id="modes"><option>Eco</option><option>Normal</option><option>Sport</option><option>Comfort</option><option>Snow</option></datalist>
+
+        <div id="chargeFields" class="grid" style="margin-top:12px" hidden>
+          <label class="field">แบตหลังชาร์จ<span class="unit">%</span>
+            <input id="socAfter" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal">
+          </label>
+          <label class="field">kWh จากตู้<span class="unit">ถ้ามี</span>
+            <input id="kwh" class="num" type="number" step="0.01" min="0" inputmode="decimal">
+          </label>
+          <label class="field span2">ค่าชาร์จ ฿<span class="unit">ถ้ามี</span>
+            <input id="cost" class="num" type="number" step="0.01" min="0" inputmode="decimal">
+          </label>
+        </div>
+
+        <details class="more">
+          <summary>ตัวเลขเพิ่มเติม (Trip meter, หมายเหตุ)</summary>
+          <div class="grid">
+            <label class="field">Trip meter<span class="unit">km</span>
+              <input id="trip" class="num" type="number" step="0.1" min="0" inputmode="decimal">
+            </label>
+            <label class="field">หมายเหตุ
+              <input id="note" placeholder="เช่น แอร์เปิด">
+            </label>
+          </div>
+        </details>
+
+        <div style="margin-top:16px"><button id="submitBtn" class="btn" type="submit">บันทึก</button></div>
+        <p id="formMsg" class="form-msg"></p>
+      </form>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <div class="card-h"><h2>รถ</h2><span>ตั้งครั้งเดียว</span></div>
+      <div class="car">
+        <label class="field">รุ่น<input id="model" placeholder="Tesla Model 3"></label>
+        <label class="field">ความจุแบต<span class="unit">kWh</span><input id="capacity" class="num" type="number" step="0.1" min="0" inputmode="decimal"></label>
+        <label class="field">ราคา DC<span class="unit">฿/kWh</span><input id="dcPrice" class="num" type="number" step="0.01" min="0" inputmode="decimal"></label>
+      </div>
+    </section>
+  </aside>
+
+  <div style="display:grid;gap:18px;min-width:0">
+    <section class="card">
+      <div class="card-h"><h2>ภาพรวม</h2><span id="last"></span></div>
+      <div class="hero">
+        <div>
+          <div class="big" id="bigCons">–</div>
+          <div class="big-u">kWh / 100 km · อัตราใช้ไฟเฉลี่ย</div>
+        </div>
+        <div class="side">
+          ระยะรวม
+          <b id="bigKm">–</b>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">พลังงานที่ใช้</div><div class="v" id="sEnergy">–<small>kWh</small></div></div>
+        <div class="stat"><div class="k">ชาร์จรวม</div><div class="v" id="sCharged">–<small>kWh</small></div></div>
+        <div class="stat"><div class="k">ค่าชาร์จรวม</div><div class="v" id="sCost">–<small>฿</small></div></div>
+        <div class="stat"><div class="k">ค่าไฟต่อ km</div><div class="v" id="sEst">–<small>฿</small></div></div>
+        <div class="stat"><div class="k">ค่าจริงต่อ km</div><div class="v" id="sCostKm">–<small>฿</small></div></div>
+        <div class="stat"><div class="k">ประสิทธิภาพชาร์จ</div><div class="v" id="sEff">–<small>%</small></div></div>
+      </div>
+
+      <div class="range-cmp">
+        <div class="bar-row">
+          <div class="lbl">ระยะเต็มแบต จอ</div>
+          <div class="bar"><i id="barScreen" style="width:0%"></i></div>
+          <div class="num" id="valScreen">–</div>
+        </div>
+        <div class="bar-row alt">
+          <div class="lbl">ระยะเต็มแบต จริง</div>
+          <div class="bar"><i id="barActual" style="width:0%"></i></div>
+          <div class="num" id="valActual">–</div>
+        </div>
+        <p class="cmp-note" id="gapNote"></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>อัตราใช้ไฟรายช่วง</h2><span id="chartHint"></span></div>
+      <svg id="chart" class="chart" viewBox="0 0 600 150" preserveAspectRatio="none" role="img" aria-label="กราฟอัตราใช้ไฟ"></svg>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>แยกตามโหมดขับ</h2></div>
+      <div id="modes" class="mode-list"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>ประวัติ</h2><span id="count"></span></div>
+      <div id="hist" class="hist"></div>
+    </section>
+  </div>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   ตั้งค่า: วางลิงก์ Web app จาก Apps Script ตรงนี้
+   ========================================================= */
+const API_URL = 'PASTE_APPS_SCRIPT_URL_HERE';
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const E = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', charge: 'ชาร์จ DC' };
+const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
+const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
+const sum = a => a.reduce((x, y) => x + y, 0);
+const avg = a => (a.length ? sum(a) / a.length : null);
+const fmtDate = ts => new Date(ts).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+let D = { entries: [], settings: {} };
+let saveTimer = null;
+let busy = false;
+
+/* ---------- api ---------- */
+async function apiGet() {
+  const r = await fetch(API_URL + '?action=getData', { cache: 'no-store' });
+  return unwrap(await r.json());
+}
+async function apiPost(payload) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+  });
+  return unwrap(await r.json());
+}
+function unwrap(j) {
+  if (!j.ok) throw new Error(j.error || 'unknown error');
+  return j.data;
+}
+
+function setSync(text, isErr) {
+  const el = $('sync');
+  el.textContent = text;
+  el.classList.toggle('err', !!isErr);
+}
+
+let toastTimer = null;
+function toast(text, isErr) {
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function applyData(d) {
+  D = d;
+  render();
+  setSync('ซิงก์แล้ว · ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
+}
+
+async function load() {
+  if (API_URL.startsWith('PASTE')) { $('configNotice').hidden = false; setSync('ยังไม่ได้ตั้งค่า', true); return; }
+  setSync('กำลังโหลด…');
+  try { applyData(await apiGet()); }
+  catch (err) { setSync('โหลดไม่สำเร็จ', true); toast('โหลดข้อมูลไม่สำเร็จ: ' + err.message, true); }
+}
+
+/* ---------- calculation ---------- */
+function analyze(entries, st) {
+  const cap = num(st.capacity) || 0;
+  const price = num(st.dcPrice);
+  const sorted = entries
+    .filter(e => num(e.odo) !== null && num(e.soc) !== null)
+    .sort((a, b) => new Date(a.ts) - new Date(b.ts) || a.odo - b.odo);
+
+  const segs = [], ch = [], warn = {};
+  const w = (id, m) => (warn[id] = warn[id] || []).push(m);
+  let state = null;
+
+  for (const e of sorted) {
+    const odo = num(e.odo), soc = num(e.soc);
+    if (state) {
+      const km = odo - state.odo, drop = state.soc - soc;
+      if (km < 0) w(e.id, 'ไมล์ลดลง');
+      if (km > 0) {
+        if (drop < 0) w(e.id, 'แบตเพิ่มระหว่างวิ่ง');
+        const valid = drop >= 0 && cap > 0;
+        const kwh = cap > 0 ? (drop / 100) * cap : null;
+        segs.push({
+          id: e.id, ts: e.ts, km, kwh, mode: e.mode || '', valid,
+          cons: valid ? (kwh / km) * 100 : null,
+          actualFull: drop > 0 ? (km / drop) * 100 : null,
+          screenFull: state.range != null && state.soc > 0 ? (state.range / state.soc) * 100 : null,
+        });
+      }
+    }
+    if (e.event === 'charge') {
+      const sa = num(e.socAfter), kin = num(e.kwh);
+      const gained = cap > 0 && sa !== null ? ((sa - soc) / 100) * cap : null;
+      if (sa !== null && sa <= soc) w(e.id, 'แบตหลังชาร์จไม่เพิ่ม');
+      const kwh = kin !== null ? kin : gained;
+      const cin = num(e.cost);
+      const cost = cin !== null ? cin : (kwh !== null && price !== null ? kwh * price : null);
+      ch.push({ id: e.id, kwh, manual: kin !== null, gained, cost });
+      state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts };
+    } else {
+      state = { odo, soc, range: num(e.range), ts: e.ts };
+    }
+  }
+
+  const totalKm = sum(segs.map(s => s.km));
+  const eSegs = segs.filter(s => s.valid);
+  const ekm = sum(eSegs.map(s => s.km));
+  const ekwh = sum(eSegs.map(s => s.kwh));
+  const withCost = ch.filter(c => c.cost !== null);
+  const totalCost = sum(withCost.map(c => c.cost));
+  const chKwh = sum(ch.filter(c => c.kwh !== null).map(c => c.kwh));
+  const priced = ch.filter(c => c.cost !== null && c.kwh > 0);
+  const avgPrice = priced.length ? sum(priced.map(c => c.cost)) / sum(priced.map(c => c.kwh)) : null;
+  const avgCons = ekm > 0 ? (ekwh / ekm) * 100 : null;
+  const manual = ch.filter(c => c.manual && c.gained !== null && c.kwh > 0);
+  const eff = manual.length ? sum(manual.map(c => c.gained)) / sum(manual.map(c => c.kwh)) : null;
+  const cmp = segs.filter(s => s.screenFull !== null && s.actualFull !== null);
+  const screenAvg = avg(cmp.map(s => s.screenFull));
+  const actualAvg = avg(cmp.map(s => s.actualFull));
+
+  const modeMap = {};
+  for (const s of eSegs) {
+    const k = s.mode || 'ไม่ระบุ';
+    const m = (modeMap[k] = modeMap[k] || { mode: k, km: 0, kwh: 0 });
+    m.km += s.km; m.kwh += s.kwh;
+  }
+  const byMode = Object.values(modeMap)
+    .map(m => ({ ...m, cons: m.km > 0 ? (m.kwh / m.km) * 100 : null }))
+    .sort((a, b) => b.km - a.km);
+
+  const segById = {}, chById = {};
+  segs.forEach(s => segById[s.id] = s);
+  ch.forEach(c => chById[c.id] = c);
+
+  return {
+    segs, warn, segById, chById, byMode,
+    t: {
+      totalKm, energyKwh: ekwh, avgCons, chKwh, totalCost,
+      missing: ch.length - withCost.length, avgPrice,
+      costPerKm: totalKm > 0 && withCost.length ? totalCost / totalKm : null,
+      estCostPerKm: avgCons !== null && avgPrice !== null ? (avgCons / 100) * avgPrice : null,
+      eff, screenAvg, actualAvg,
+      gapPct: screenAvg && actualAvg ? ((screenAvg - actualAvg) / actualAvg) * 100 : null,
+    },
+  };
+}
+
+/* ---------- form ---------- */
+const form = $('form');
+const eventType = () => form.querySelector('input[name=event]:checked').value;
+
+function updateEventUI() {
+  const isCharge = eventType() === 'charge';
+  $('chargeFields').hidden = !isCharge;
+  $('socLabel').textContent = isCharge ? 'แบตก่อนชาร์จ' : 'แบต';
+  $('socAfter').required = isCharge;
+}
+form.querySelectorAll('input[name=event]').forEach(r => r.addEventListener('change', updateEventUI));
+
+function nowLocal() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+function resetForm() {
+  ['odo', 'soc', 'range', 'trip', 'socAfter', 'kwh', 'cost', 'note'].forEach(id => ($(id).value = ''));
+  $('time').value = nowLocal();
+  updateEventUI();
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (busy) return;
+  const type = eventType();
+  const v = id => $(id).value.trim();
+  const msg = (t, isErr) => { $('formMsg').textContent = t; $('formMsg').classList.toggle('err', !!isErr); };
+
+  const ts = new Date(v('time'));
+  const soc = num(v('soc'));
+  const odo = num(v('odo'));
+  if (isNaN(ts)) return msg('กรุณาใส่เวลา', true);
+  if (odo === null) return msg('กรุณาใส่เลขไมล์', true);
+  if (soc === null || soc < 0 || soc > 100) return msg('แบตต้องอยู่ระหว่าง 0 ถึง 100', true);
+
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    ts: ts.toISOString(), event: type, odo, soc,
+    range: v('range') === '' ? '' : num(v('range')),
+    trip: v('trip') === '' ? '' : num(v('trip')),
+    mode: v('mode'), note: v('note'),
+    socAfter: '', kwh: '', cost: '',
+  };
+  if (type === 'charge') {
+    const sa = num(v('socAfter'));
+    if (sa === null || sa <= soc || sa > 100) return msg('แบตหลังชาร์จต้องมากกว่าก่อนชาร์จและไม่เกิน 100', true);
+    entry.socAfter = sa;
+    entry.kwh = v('kwh') === '' ? '' : num(v('kwh'));
+    entry.cost = v('cost') === '' ? '' : num(v('cost'));
+  }
+
+  busy = true;
+  $('submitBtn').disabled = true;
+  msg('กำลังบันทึก…');
+  try {
+    applyData(await apiPost({ action: 'addEntry', entry }));
+    resetForm();
+    msg('');
+    toast('บันทึกแล้ว');
+  } catch (err) {
+    msg('บันทึกไม่สำเร็จ: ' + err.message, true);
+    toast('บันทึกไม่สำเร็จ', true);
+  } finally {
+    busy = false;
+    $('submitBtn').disabled = false;
+  }
+});
+
+/* ---------- car settings (autosave) ---------- */
+['model', 'capacity', 'dcPrice'].forEach(id => $(id).addEventListener('input', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      applyData(await apiPost({
+        action: 'saveSettings',
+        settings: { model: $('model').value, capacity: $('capacity').value, dcPrice: $('dcPrice').value },
+      }));
+    } catch (err) { toast('บันทึกการตั้งค่าไม่สำเร็จ', true); }
+  }, 700);
+}));
+
+/* ---------- render ---------- */
+function setStat(id, value, unit) {
+  $(id).innerHTML = `${value}${unit ? `<small>${unit}</small>` : ''}`;
+}
+
+function render() {
+  const s = D.settings || {};
+  ['model', 'capacity', 'dcPrice'].forEach(id => {
+    if (document.activeElement !== $(id)) $(id).value = s[id] || '';
+  });
+  $('carName').textContent = s.model ? s.model : 'รถของฉัน';
+  if (!$('time').value) resetForm();
+
+  const res = analyze(D.entries, s);
+  const t = res.t;
+  const sorted = [...D.entries].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const last = sorted[0];
+
+  $('last').textContent = last ? `ล่าสุด ${fmtDate(last.ts)} · ${f(last.odo, 1)} km` : '';
+  $('count').textContent = sorted.length ? `${sorted.length} รายการ` : '';
+  if (last) $('odo').placeholder = 'ล่าสุด ' + f(last.odo, 1);
+
+  $('bigCons').textContent = t.avgCons === null ? '–' : f(t.avgCons, 1);
+  $('bigKm').textContent = t.totalKm ? f(t.totalKm, 1) + ' km' : '–';
+
+  setStat('sEnergy', f(t.energyKwh, 1), 'kWh');
+  setStat('sCharged', f(t.chKwh, 1), 'kWh');
+  setStat('sCost', f(t.totalCost, 0), '฿');
+  setStat('sEst', f(t.estCostPerKm, 2), '฿');
+  setStat('sCostKm', f(t.costPerKm, 2), '฿');
+  setStat('sEff', t.eff === null ? '–' : f(t.eff * 100, 0), t.eff === null ? '' : '%');
+
+  const maxKm = Math.max(t.screenAvg || 0, t.actualAvg || 0, 1);
+  $('barScreen').style.width = t.screenAvg ? (t.screenAvg / maxKm * 100) + '%' : '0%';
+  $('barActual').style.width = t.actualAvg ? (t.actualAvg / maxKm * 100) + '%' : '0%';
+  $('valScreen').textContent = t.screenAvg ? f(t.screenAvg, 0) + ' km' : '–';
+  $('valActual').textContent = t.actualAvg ? f(t.actualAvg, 0) + ' km' : '–';
+  $('gapNote').textContent = t.gapPct === null
+    ? 'ต้องมีช่วงที่มีทั้งระยะบนจอและแบต% เพื่อเทียบ'
+    : (t.gapPct >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(t.gapPct), 1) + '%'
+      + (t.missing ? ` · ไม่มีค่าชาร์จ ${t.missing} ครั้ง` : '');
+
+  renderChart(res.segs.filter(s => s.cons !== null));
+  renderModes(res.byMode);
+  renderHistory(sorted, res);
+}
+
+function renderChart(pts) {
+  const svg = $('chart');
+  const W = 600, H = 150, padL = 36, padR = 12, padT = 14, padB = 22;
+  if (pts.length < 2) {
+    svg.innerHTML = '';
+    $('chartHint').textContent = pts.length ? 'ต้องมีอย่างน้อย 2 ช่วง' : '';
+    if (!pts.length) svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" class="axis-t">ยังไม่มีข้อมูลพอให้วาดกราฟ</text>`;
+    return;
+  }
+  $('chartHint').textContent = `${pts.length} ช่วง`;
+  const vals = pts.map(p => p.cons);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi - lo < 1) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.15; lo -= pad; hi += pad;
+  const x = i => padL + (i / (pts.length - 1)) * (W - padL - padR);
+  const y = v => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.cons).toFixed(1)}`).join(' ');
+  const area = `${path} L${x(pts.length - 1).toFixed(1)},${H - padB} L${x(0).toFixed(1)},${H - padB} Z`;
+  const ticks = [hi - pad, (hi + lo) / 2, lo + pad];
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1c1917" stop-opacity=".10"/>
+        <stop offset="100%" stop-color="#1c1917" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${ticks.map(t => `<line class="grid-line" x1="${padL}" x2="${W - padR}" y1="${y(t)}" y2="${y(t)}"/><text class="axis-t" x="4" y="${y(t) + 4}">${f(t, 1)}</text>`).join('')}
+    <path class="area" d="${area}"/>
+    <path class="trace" d="${path}"/>
+    ${pts.map((p, i) => `<circle class="dot" cx="${x(i)}" cy="${y(p.cons)}" r="3.5"/>`).join('')}
+    <text class="axis-t" x="${padL}" y="${H - 6}">${fmtDate(pts[0].ts)}</text>
+    <text class="axis-t" x="${W - padR}" y="${H - 6}" text-anchor="end">${fmtDate(pts[pts.length - 1].ts)}</text>`;
+}
+
+function renderModes(rows) {
+  $('modes').innerHTML = rows.length
+    ? rows.map(m => `
+      <div class="mode-row">
+        <div class="n">${esc(m.mode)}</div>
+        <div class="v">${f(m.cons, 1)} <span style="font-weight:400;color:var(--muted);font-size:12px">kWh/100km</span></div>
+        <div class="s">${f(m.km, 1)} km · ${f(m.kwh, 2)} kWh</div>
+      </div>`).join('')
+    : '<div class="empty">ยังไม่มีข้อมูลตามโหมด</div>';
+}
+
+function renderHistory(sorted, res) {
+  if (!sorted.length) { $('hist').innerHTML = '<div class="empty">ยังไม่มีบันทึก เริ่มจากกรอก “เริ่มต้น”</div>'; return; }
+  $('hist').innerHTML = sorted.map(e => {
+    const seg = res.segById[e.id], c = res.chById[e.id];
+    const socTxt = e.event === 'charge' && e.socAfter !== null ? `${f(e.soc, 0)} → ${f(e.socAfter, 0)}%` : `${f(e.soc, 0)}%`;
+    const parts = [];
+    if (seg) parts.push(`วิ่ง ${f(seg.km, 1)} km` + (seg.kwh !== null ? ` · ${f(seg.kwh, 2)} kWh` : '') + (seg.cons !== null ? ` · ${f(seg.cons, 1)}/100` : ''));
+    if (seg && seg.screenFull !== null && seg.actualFull !== null) parts.push(`เต็มแบต จอ ${f(seg.screenFull, 0)} / จริง ${f(seg.actualFull, 0)} km`);
+    if (c) parts.push(`ชาร์จ ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
+    const notes = [];
+    if (e.range !== null) notes.push(`จอ ${f(e.range, 1)} km`);
+    if (e.trip !== null) notes.push(`trip ${f(e.trip, 1)} km`);
+    if (e.mode) notes.push(e.mode);
+    if (e.note) notes.push(e.note);
+    const warns = res.warn[e.id];
+    const d = new Date(e.ts);
+    return `
+      <div class="item">
+        <div class="when"><b>${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</b>${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</div>
+        <div class="main">
+          <div class="title">${f(e.odo, 1)}<small>km · ${socTxt}</small></div>
+          <div class="sub"><span class="chip ${e.event === 'charge' ? 'dc' : ''}">${E[e.event] || e.event}</span></div>
+          ${parts.map(p => `<div class="sub">${p}</div>`).join('')}
+          ${notes.length ? `<div class="note">${esc(notes.join(' · '))}</div>` : ''}
+          ${warns ? `<span class="flag">${warns.join(', ')}</span>` : ''}
+        </div>
+        <div><button class="del" data-id="${esc(e.id)}">ลบ</button></div>
+      </div>`;
+  }).join('');
+}
+
+/* ---------- delete (two-tap confirm, no native dialogs) ---------- */
+$('hist').addEventListener('click', async e => {
+  const btn = e.target.closest('button.del');
+  if (!btn || busy) return;
+  if (!btn.dataset.armed) {
+    btn.dataset.armed = '1';
+    btn.textContent = 'กดอีกครั้งเพื่อลบ';
+    setTimeout(() => { delete btn.dataset.armed; btn.textContent = 'ลบ'; }, 3000);
+    return;
+  }
+  busy = true;
+  try {
+    applyData(await apiPost({ action: 'deleteEntry', id: btn.dataset.id }));
+    toast('ลบแล้ว');
+  } catch (err) { toast('ลบไม่สำเร็จ', true); }
+  finally { busy = false; }
+});
+
+/* ---------- init ---------- */
+resetForm();
+load();
+</script>
+</body>
+</html>

@@ -1,28 +1,34 @@
-# ⚡ EV Tracker
+# EV Tracker
 
 บันทึกไมล์ แบต% และโหมดขับของรถไฟฟ้า เพื่อคำนวณอัตราการใช้ไฟ ระยะทาง และค่าใช้จ่ายชาร์จ DC
 
 ## โครงสร้าง
 
 ```
-apps-script/      เวอร์ชันใช้งานจริง: เว็บ + ฐานข้อมูล Google Sheet
-  Code.gs         ฝั่งเซิร์ฟเวอร์ (อ่าน/เขียน Sheet)
-  index.html      หน้าเว็บ
+web/              หน้าเว็บ (index.html ไฟล์เดียว) ฝังบน Vercel
+apps-script/      Code.gs เป็น API เชื่อมกับ Google Sheet (ฐานข้อมูล)
 local/            เวอร์ชันเก่า เก็บข้อมูลใน localStorage ของเบราว์เซอร์
-tests/            unit test ของตรรกะคำนวณเวอร์ชัน local (npm test)
+tests/            unit test ของตรรกะคำนวณเวอร์ชัน local
 ```
 
-## ติดตั้งเวอร์ชัน Apps Script
+## 1) ตั้งค่า Google Sheet + Apps Script
 
-1. สร้าง Google Sheet แล้วเลือก **ส่วนขยาย → Apps Script**
+1. สร้าง Google Sheet ชื่อ **EV Tracker** แล้วเลือก **ส่วนขยาย → Apps Script**
 2. วาง `apps-script/Code.gs` ลงในไฟล์ `Code.gs`
-3. กด **+ → HTML** ตั้งชื่อ **index** แล้ววาง `apps-script/index.html`
-4. **Deploy → New deployment → Web app** โดย Execute as: **Me** และ Who has access: **Anyone**
-5. คัดลอกลิงก์ที่ได้ไปเปิดบนคอมหรือมือถือ
+3. **Deploy → New deployment → Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+4. คัดลอกลิงก์ที่ลงท้ายด้วย `/exec`
 
-แก้โค้ดแล้วต้อง Deploy ใหม่ (Manage deployments → Edit → New version)
+แก้โค้ดแล้วต้อง Deploy ใหม่ที่ Manage deployments → Edit → New version (ลิงก์เดิมยังใช้ได้)
 
-> ใครมีลิงก์ก็แก้หรือลบข้อมูลได้ ใช้เฉพาะคนที่ไว้ใจ
+> ใครมีลิงก์ Apps Script ก็เรียก API ได้ ใช้เฉพาะคนที่ไว้ใจ
+
+## 2) ฝังหน้าเว็บบน Vercel
+
+1. วางลิงก์ `/exec` ในตัวแปร `API_URL` ใน `web/index.html`
+2. ใน Vercel กด **Add New → Project** เลือก repo นี้
+3. ตั้ง **Root Directory** เป็น `web` แล้ว Deploy (Framework: Other)
 
 ## สูตรที่ใช้
 
@@ -31,7 +37,7 @@ tests/            unit test ของตรรกะคำนวณเวอร�
 | ระยะช่วงนี้ | ไมล์ปัจจุบัน − ไมล์บันทึกก่อนหน้า |
 | kWh ที่ใช้ | (แบต% ก่อน − แบต% ปัจจุบัน) ÷ 100 × ความจุแบต |
 | kWh/100 km | kWh ที่ใช้ ÷ ระยะ × 100 |
-| ระยะเต็มแบตตามจอ | ระยะที่เหลือบนจอ ÷ แบต% × 100 (ณ จุดเริ่มช่วง) |
+| ระยะเต็มแบตตามจอ | ระยะบนจอ ÷ แบต% × 100 (ณ จุดเริ่มช่วง) |
 | ระยะเต็มแบตจริง | ระยะช่วงนี้ ÷ แบต% ที่ลด × 100 |
 | kWh ที่ชาร์จ | ค่าที่กรอก หรือ (แบต% หลัง − ก่อน) ÷ 100 × ความจุ |
 | ค่าชาร์จ | ค่าที่กรอก หรือ kWh × ราคาชาร์จ DC |

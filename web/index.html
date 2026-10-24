@@ -6,11 +6,11 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090c">
 <title>EV Tracker</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --bg: #08090c;
@@ -42,11 +42,38 @@
     -webkit-font-smoothing: antialiased;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  button, input { font: inherit; }
+  body[data-v="fuel"] .ev-only, body[data-v="ev"] .fuel-only { display: none !important; }
+  button, input, select { font: inherit; }
   main, .col, .card, .side-form { min-width: 0; max-width: 100%; }
   svg { max-width: 100%; }
 
-  /* ---------- top bar ---------- */
+  /* ---------- หน้าแรก ---------- */
+  .home, .soon { min-height: 100vh; display: grid; place-items: center; padding: 40px 18px; }
+  .home-in { width: 100%; max-width: 720px; }
+  .home-hero { text-align: center; margin-bottom: 28px; }
+  .home-logo { font-size: 46px; line-height: 1; }
+  .home-hero h1 { margin: 12px 0 6px; font-size: 26px; letter-spacing: -.02em; }
+  .home-hero p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .pick-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 640px) { .pick-grid { grid-template-columns: 1fr 1fr; } }
+  .pick {
+    appearance: none; -webkit-appearance: none; font: inherit; color: var(--text); text-align: left;
+    width: 100%; display: grid; gap: 10px; padding: 26px 22px; cursor: pointer;
+    border-radius: 24px; border: 1px solid var(--line-2);
+    background: linear-gradient(160deg, var(--c1), var(--surface) 70%);
+    box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .8);
+    transition: transform .14s, border-color .14s;
+  }
+  .pick:hover { transform: translateY(-2px); border-color: var(--c-accent); }
+  .pick:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+  .pick.ev { --c1: rgba(110, 231, 183, .2); --c-accent: #6ee7b7; }
+  .pick.fuel { --c1: rgba(252, 211, 77, .2); --c-accent: #fcd34d; }
+  .pick-ico { font-size: 40px; line-height: 1; }
+  .pick-t { font-size: 22px; font-weight: 700; }
+  .pick-d { font-size: 14px; color: var(--text-2); }
+  .pick-go { font-size: 13.5px; font-weight: 600; margin-top: 6px; color: var(--c-accent); }
+
+  /* ---------- แถบบน ---------- */
   .top {
     position: sticky; top: 0; z-index: 5;
     background: rgba(8, 9, 12, .78);
@@ -61,7 +88,7 @@
   }
   .brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; min-width: 0; }
   .brand small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .top-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .top-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
   .sync {
     font-size: 11.5px; color: var(--muted); white-space: nowrap; font-family: var(--mono);
     background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px;
@@ -88,8 +115,10 @@
     .side-form { position: sticky; top: 150px; }
   }
   .col { display: grid; gap: 16px; min-width: 0; }
+  .notice { max-width: 1120px; margin: 16px auto 0; padding: 0 16px; }
+  .notice div { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; }
 
-  /* ---------- card ---------- */
+  /* ---------- การ์ด ---------- */
   .card {
     background: linear-gradient(180deg, var(--surface-2), var(--surface));
     border: 1px solid var(--line); border-radius: var(--radius);
@@ -97,11 +126,16 @@
     overflow: hidden;
   }
   .card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 0; }
-  .card-h h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.005em; color: var(--c, var(--text)); display: flex; align-items: center; gap: 9px; }
+  .card-h h2 {
+    margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.005em;
+    color: var(--c, var(--text)); display: flex; align-items: center; gap: 9px;
+  }
   .card-h h2::before {
     content: attr(data-ico); display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0;
     border-radius: 10px; font-size: 15px; background: color-mix(in srgb, var(--c, #fff) 18%, transparent);
   }
+  .card-h span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .card-b { padding: 16px 18px 18px; }
   .k-sky { --c: #7dd3fc; }
   .k-mint { --c: #6ee7b7; }
   .k-violet { --c: #c4b5fd; }
@@ -109,10 +143,8 @@
   .k-rose { --c: #fda4af; }
   .k-orange { --c: #fdba74; }
   .k-teal { --c: #5eead4; }
-  .card-h span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
-  .card-b { padding: 16px 18px 18px; }
 
-  /* ---------- segmented ---------- */
+  /* ---------- ปุ่มเลือกประเภทบันทึก ---------- */
   .seg {
     display: flex; flex-wrap: wrap; gap: 4px;
     background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 4px;
@@ -128,15 +160,14 @@
   .seg label:has(input:checked) { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .seg label:has(input:focus-visible) { box-shadow: 0 0 0 2px var(--text); }
 
-  /* ---------- fields ---------- */
+  /* ---------- ช่องกรอก ---------- */
   .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
   .grid > * { min-width: 0; }
   .span2 { grid-column: 1 / -1; }
   .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
   .lab { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
   .lab em { font-style: normal; color: #565d6b; font-size: 12px; }
-
-  /* font-size 16px on inputs: iOS จะไม่ซูมตอนแตะช่อง */
+  /* font-size 16px: iOS จะไม่ซูมตอนแตะช่อง */
   input {
     display: block; width: 100%; min-width: 0; max-width: 100%;
     height: 46px; padding: 0 14px;
@@ -150,8 +181,10 @@
   input:focus { outline: none; border-color: var(--line-2); background: #23272f; box-shadow: 0 0 0 4px rgba(255,255,255,.06); }
   input.num { font-family: var(--mono); }
   input[type=datetime-local] { font-family: var(--mono); }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--text-2); min-height: 40px; }
+  .check input { width: 22px; height: 22px; padding: 0; margin: 0; flex-shrink: 0; accent-color: #fcd34d; }
 
-  /* ---------- buttons ---------- */
+  /* ---------- ปุ่ม ---------- */
   .btn {
     width: 100%; height: 50px; border: 0; border-radius: 14px;
     background: var(--accent); color: var(--accent-ink);
@@ -172,18 +205,16 @@
     color: var(--muted); font-size: 12.5px; cursor: pointer;
   }
   .del:hover { color: var(--text); }
-
   details.more { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
   details.more summary { cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
   details.more summary::-webkit-details-marker { display: none; }
   details.more summary::before { content: "+ "; color: var(--text-2); }
   details.more[open] summary::before { content: "− "; }
   details.more[open] summary { margin-bottom: 14px; color: var(--text-2); }
-
   .form-msg { font-size: 13px; color: var(--muted); min-height: 20px; margin: 12px 0 0; text-align: center; }
   .form-msg.err { color: var(--text); }
 
-  /* ---------- car sheet (ป็อปอัพจากบนสุด) ---------- */
+  /* ---------- ป็อปอัพตั้งค่ารถ ---------- */
   .sheet { position: fixed; inset: 0; z-index: 30; display: flex; justify-content: center; align-items: flex-start; }
   .sheet-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, .6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
   .sheet-panel {
@@ -197,7 +228,7 @@
   .sheet-panel .car { display: grid; gap: 14px; }
   .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 
-  /* ---------- summary ---------- */
+  /* ---------- สรุป ---------- */
   .hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); padding: 18px; }
   .hero > div { min-width: 0; }
   .hero > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
@@ -206,7 +237,6 @@
   .hero .big small { font-family: var(--font); font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--muted); margin-left: 8px; }
   .hero .v { font-family: var(--mono); font-weight: 500; font-size: 30px; line-height: 1; margin-top: 10px; font-variant-numeric: tabular-nums; }
   .hero .v small { font-family: var(--font); font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 6px; }
-
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 18px 18px; }
   .stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; min-width: 0; }
   .stat .k { font-size: 12px; color: var(--muted); }
@@ -216,7 +246,6 @@
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .hero .big { font-size: 46px; }
   }
-
   .cmp { padding: 16px 18px 18px; border-top: 1px solid var(--line); display: grid; gap: 14px; }
   .bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; }
   .bar-row .lbl { font-size: 13px; color: var(--text-2); }
@@ -227,7 +256,7 @@
   .cmp-note, .time-line { font-size: 12.5px; color: var(--muted); margin: 0; }
   .time-line b { color: var(--text-2); font-weight: 500; font-family: var(--mono); }
 
-  /* ---------- chart ---------- */
+  /* ---------- กราฟ ---------- */
   .chart-wrap { padding: 10px 12px 8px; }
   .chart { width: 100%; height: 170px; display: block; }
   .chart .grid-line { stroke: rgba(255,255,255,.07); stroke-width: 1; }
@@ -236,13 +265,13 @@
   .chart .dot { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
   .chart .area { fill: url(#fade); }
 
-  /* ---------- rows ---------- */
+  /* ---------- แถวและประวัติ ---------- */
   .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 18px; border-top: 1px solid var(--line); }
   .row:first-child { border-top: 0; }
   .row .t { font-weight: 500; font-size: 14.5px; }
   .row .m { font-family: var(--mono); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
   .row .s { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
-
+  .unit { font-family: var(--font); font-size: 12px; color: var(--muted); }
   .hist-item { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 0 16px; padding: 16px 18px; border-top: 1px solid var(--line); }
   .hist-item:first-child { border-top: 0; }
   .when { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.45; }
@@ -260,21 +289,19 @@
   .hist-note { font-size: 12.5px; color: var(--muted); margin-top: 3px; overflow-wrap: anywhere; }
   .flag { display: inline-block; margin-top: 7px; font-size: 12px; color: var(--text); background: rgba(255,255,255,.08); border-radius: 8px; padding: 2px 8px; }
 
-  /* ---------- trips ---------- */
+  /* ---------- ทริป ---------- */
   .trip { padding: 16px 18px; border-top: 1px solid var(--line); }
   .trip:first-child { border-top: 0; }
   .trip-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
   .trip-h b { display: block; font-weight: 600; font-size: 15px; }
   .trip-h span { font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
-
-  /* ---------- k/v tiles (ใช้ร่วมกัน) ---------- */
   .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .kv > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
   .kv > div:first-child { grid-column: 1 / -1; }
   .kv span { display: block; font-size: 11.5px; color: var(--muted); }
   .kv b { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; margin-top: 2px; overflow-wrap: anywhere; }
 
-  /* ---------- legs (คิดค่า) ---------- */
+  /* ---------- คิดค่า ---------- */
   .li { padding: 16px 18px 16px 15px; border-top: 1px solid var(--line); border-left: 3px solid var(--drive); }
   .li:first-child { border-top: 0; }
   .li-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -282,10 +309,34 @@
   .li-h span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
   .li.charge { background: rgba(245, 185, 66, .06); border-left-color: var(--charge); }
   .li.charge .li-h b { color: var(--charge); }
-  .li-kind { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--drive); }
+  .li-kind { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--drive); margin-bottom: 4px; }
   .li.charge .li-kind { color: var(--charge); }
-
   .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* ---------- เส้นทาง ---------- */
+  #routeSel {
+    display: block; width: 100%; height: 42px; padding: 0 12px; margin-bottom: 14px;
+    background: var(--surface-3); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px;
+    font-size: 16px; appearance: none; -webkit-appearance: none;
+  }
+  .rsum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .rsum > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .rsum span { display: block; font-size: 11.5px; color: var(--muted); }
+  .rsum b { font-family: var(--mono); font-weight: 500; font-size: 15px; }
+  .route-map { height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+  .rnum { background: transparent; border: 0; box-shadow: none; color: #08090c; font: 600 12px var(--mono); padding: 0; }
+  .rnum::before { display: none; }
+  .leaflet-popup-content { font-family: var(--font); font-size: 13px; line-height: 1.5; margin: 12px 14px; }
+  .route-svg { width: 100%; height: auto; display: block; }
+  .route-bg { fill: var(--surface-2); stroke: var(--line); }
+  .route-line { fill: none; stroke: #7dd3fc; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
+  .rn { fill: #08090c; font: 600 12px var(--mono); text-anchor: middle; }
+  .rlist { display: grid; gap: 14px; margin-top: 16px; }
+  .rrow { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .rdot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--mono); color: #08090c; }
+  .rt { font-weight: 600; font-size: 14px; }
+  .rs { font-size: 12.5px; color: var(--muted); font-family: var(--mono); margin-top: 2px; overflow-wrap: anywhere; }
+  .rx { font-size: 12.5px; color: var(--text-2); margin-top: 3px; overflow-wrap: anywhere; }
 
   /* ---------- toast ---------- */
   .toast {
@@ -299,68 +350,10 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.err { background: var(--surface-3); color: var(--text); border: 1px solid var(--line-2); }
 
-  .notice { max-width: 1120px; margin: 16px auto 0; padding: 0 16px; }
-  .notice div { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; }
-
-  /* ---------- เส้นทาง ---------- */
-  #routeSel {
-    display: block; width: 100%; height: 42px; padding: 0 12px; margin-bottom: 14px;
-    background: var(--surface-3); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px;
-    font: inherit; font-size: 16px; appearance: none; -webkit-appearance: none;
-  }
-  .rsum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
-  .rsum > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
-  .rsum span { display: block; font-size: 11.5px; color: var(--muted); }
-  .rsum b { font-family: var(--mono); font-weight: 500; font-size: 15px; }
-  .leaflet-popup-content { font-family: var(--font); font-size: 13px; line-height: 1.5; margin: 12px 14px; }
-  .route-map { height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
-  .rnum { background: transparent; border: 0; box-shadow: none; color: #08090c; font: 600 12px var(--mono); padding: 0; }
-  .rnum::before { display: none; }
-  .route-svg { width: 100%; height: auto; display: block; }
-  .route-bg { fill: var(--surface-2); stroke: var(--line); }
-  .route-line { fill: none; stroke: #7dd3fc; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
-  .rn { fill: #08090c; font: 600 12px var(--mono); text-anchor: middle; }
-  .rlist { display: grid; gap: 14px; margin-top: 16px; }
-  .rrow { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; }
-  .rdot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--mono); color: #08090c; }
-  .rt { font-weight: 600; font-size: 14px; }
-  .rs { font-size: 12.5px; color: var(--muted); font-family: var(--mono); margin-top: 2px; overflow-wrap: anywhere; }
-  .rx { font-size: 12.5px; color: var(--text-2); margin-top: 3px; overflow-wrap: anywhere; }
-
-  /* ---------- หน้าแรก: เลือกประเภทรถ ---------- */
-  .home, .soon { min-height: 100vh; display: grid; place-items: center; padding: 40px 18px; }
-  .home-in { width: 100%; max-width: 720px; }
-  .home-hero { text-align: center; margin-bottom: 28px; }
-  .home-logo { font-size: 46px; line-height: 1; }
-  .home-hero h1 { margin: 12px 0 6px; font-size: 26px; letter-spacing: -.02em; }
-  .home-hero p { margin: 0; color: var(--muted); font-size: 14.5px; }
-  .pick-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
-  @media (min-width: 640px) { .pick-grid { grid-template-columns: 1fr 1fr; } }
-  .pick {
-    appearance: none; -webkit-appearance: none; font: inherit; color: var(--text); text-align: left;
-    width: 100%; display: grid; gap: 10px; padding: 26px 22px; cursor: pointer;
-    border-radius: 24px; border: 1px solid var(--line-2);
-    background: linear-gradient(160deg, var(--c1), var(--surface) 70%);
-    box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .8);
-    transition: transform .14s, border-color .14s;
-  }
-  .pick:hover { transform: translateY(-2px); border-color: var(--c-accent); }
-  .pick:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
-  .pick.ev { --c1: rgba(110, 231, 183, .2); --c-accent: #6ee7b7; }
-  .pick.fuel { --c1: rgba(252, 211, 77, .2); --c-accent: #fcd34d; }
-  .pick-ico { font-size: 40px; line-height: 1; }
-  .pick-t { font-size: 22px; font-weight: 700; }
-  .pick-d { font-size: 14px; color: var(--text-2); }
-  .pick-go { font-size: 13.5px; font-weight: 600; margin-top: 6px; color: var(--c-accent); }
-  .soon-in { text-align: center; max-width: 420px; }
-  .soon-ico { font-size: 46px; line-height: 1; }
-  .soon h2 { font-size: 22px; margin: 12px 0 8px; }
-  .soon p { color: var(--muted); margin: 0 0 16px; font-size: 14.5px; }
-
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
-<body>
+<body data-v="ev">
 
 <!-- ============ หน้าแรก: เลือกประเภทรถ ============ -->
 <section id="home" class="home">
@@ -387,21 +380,11 @@
   </div>
 </section>
 
-<!-- ============ รถน้ำมัน: กำลังทำ ============ -->
-<section id="fuelSoon" class="soon" hidden>
-  <div class="soon-in">
-    <div class="soon-ico">⛽</div>
-    <h2>รถน้ำมัน</h2>
-    <p>กำลังทำ: บันทึกการเติมลิตรและราคา เลขไมล์ และคำนวณ km/L</p>
-    <button class="pill-btn" data-home type="button">← เลือกประเภทใหม่</button>
-  </div>
-</section>
-
-<!-- ============ รถไฟฟ้า: หน้าเดิม ============ -->
-<div id="appEv" hidden>
+<!-- ============ แอปหลัก (ใช้ร่วมกันทั้งสองประเภท) ============ -->
+<div id="app" hidden>
 <header class="top">
   <div class="top-in">
-    <div class="brand">EV Tracker<small id="carName">รถของฉัน</small></div>
+    <div class="brand"><span id="brandName">EV Tracker</span><small id="carName"></small></div>
     <div class="top-r">
       <button class="pill-btn" data-home type="button">← ประเภท</button>
       <span id="sync" class="sync">กำลังเชื่อมต่อ…</span>
@@ -420,14 +403,15 @@
 <main data-tab="main">
   <aside class="side-form col">
     <section class="card">
-      <div class="card-h"><h2 class="k-sky" data-ico="✏️">บันทึกใหม่</h2><span id="clockHint"></span></div>
+      <div class="card-h"><h2 class="k-sky" data-ico="✏️">บันทึกใหม่</h2></div>
       <div class="card-b">
         <form id="form" autocomplete="off">
           <div class="seg" role="radiogroup" aria-label="ประเภทการบันทึก">
             <label><input type="radio" name="event" value="start" checked>▶️ เริ่มต้น</label>
             <label><input type="radio" name="event" value="drive">🛣️ ระหว่างทาง</label>
-            <label><input type="radio" name="event" value="chargeStart">🔌 ถึงจุดชาร์จ</label>
-            <label><input type="radio" name="event" value="chargeEnd">🔋 ชาร์จเสร็จ</label>
+            <label class="ev-only"><input type="radio" name="event" value="chargeStart">🔌 ถึงจุดชาร์จ</label>
+            <label class="ev-only"><input type="radio" name="event" value="chargeEnd">🔋 ชาร์จเสร็จ</label>
+            <label class="fuel-only"><input type="radio" name="event" value="refuel">⛽ เติมน้ำมัน</label>
             <label><input type="radio" name="event" value="end">🏁 สิ้นสุด</label>
           </div>
 
@@ -440,11 +424,11 @@
               <span class="lab">เลขไมล์ <em>km</em></span>
               <input id="odo" class="num" type="number" step="0.1" min="0" inputmode="decimal" required>
             </label>
-            <label class="field">
+            <label class="field ev-only" id="wrapSoc">
               <span class="lab"><span id="socLabel">แบต</span> <em>%</em></span>
-              <input id="soc" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal" required>
+              <input id="soc" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal">
             </label>
-            <label class="field" id="wrapRange">
+            <label class="field ev-only" id="wrapRange">
               <span class="lab">ระยะบนจอ <em>km</em></span>
               <input id="range" class="num" type="number" step="0.1" min="0" inputmode="decimal">
             </label>
@@ -455,7 +439,7 @@
           </div>
           <datalist id="modes"><option>Eco</option><option>Normal</option><option>Sport</option><option>Comfort</option><option>Snow</option></datalist>
 
-          <div id="chargeFields" class="grid" style="margin-top:14px" hidden>
+          <div id="chargeFields" class="grid ev-only" style="margin-top:14px" hidden>
             <label class="field">
               <span class="lab">kWh จากตู้ <em>ถ้ามี</em></span>
               <input id="kwh" class="num" type="number" step="0.01" min="0" inputmode="decimal">
@@ -464,6 +448,18 @@
               <span class="lab">ค่าชาร์จ ฿ <em>ถ้ามี</em></span>
               <input id="cost" class="num" type="number" step="0.01" min="0" inputmode="decimal">
             </label>
+          </div>
+
+          <div id="fuelFields" class="grid fuel-only" style="margin-top:14px" hidden>
+            <label class="field">
+              <span class="lab">จำนวนลิตร <em>L</em></span>
+              <input id="liters" class="num" type="number" step="0.01" min="0" inputmode="decimal">
+            </label>
+            <label class="field">
+              <span class="lab">ราคารวม ฿</span>
+              <input id="fcost" class="num" type="number" step="0.01" min="0" inputmode="decimal">
+            </label>
+            <label class="check span2"><input id="full" type="checkbox"> เติมเต็มถัง</label>
           </div>
 
           <details class="more">
@@ -492,23 +488,16 @@
       <div class="card-h"><h2 class="k-mint" data-ico="📊">ภาพรวม</h2><span id="last"></span></div>
       <div class="hero">
         <div>
-          <div class="k">อัตราใช้ไฟเฉลี่ย</div>
-          <div class="big" id="bigCons">–<small>kWh/100km</small></div>
+          <div class="k" id="heroLbl">อัตราใช้ไฟเฉลี่ย</div>
+          <div class="big" id="bigCons">–</div>
         </div>
         <div>
           <div class="k">ระยะรวม</div>
-          <div class="v" id="bigKm">–<small>km</small></div>
+          <div class="v" id="bigKm">–</div>
         </div>
       </div>
-      <div class="stats">
-        <div class="stat"><div class="k">พลังงานที่ใช้</div><div class="v" id="sEnergy">–</div></div>
-        <div class="stat"><div class="k">ชาร์จรวม</div><div class="v" id="sCharged">–</div></div>
-        <div class="stat"><div class="k">ค่าชาร์จรวม</div><div class="v" id="sCost">–</div></div>
-        <div class="stat"><div class="k">ค่าไฟต่อ km</div><div class="v" id="sEst">–</div></div>
-        <div class="stat"><div class="k">ค่าจริงต่อ km</div><div class="v" id="sCostKm">–</div></div>
-        <div class="stat"><div class="k">ประสิทธิภาพชาร์จ</div><div class="v" id="sEff">–</div></div>
-      </div>
-      <div class="cmp">
+      <div class="stats" id="stats"></div>
+      <div class="cmp ev-only">
         <div class="bar-row">
           <span class="lbl">ระยะเต็มแบต · จอ</span><span class="num" id="valScreen">–</span>
           <div class="bar"><i id="barScreen"></i></div>
@@ -518,28 +507,22 @@
           <div class="bar"><i id="barActual"></i></div>
         </div>
         <p class="cmp-note" id="gapNote"></p>
-        <p class="time-line" id="timeLine"></p>
       </div>
+      <div style="padding:0 18px 18px"><p class="time-line" id="timeLine"></p></div>
     </section>
 
     <section class="card">
-      <div class="card-h"><h2 class="k-violet" data-ico="📈">อัตราใช้ไฟรายช่วง</h2><span id="chartHint"></span></div>
+      <div class="card-h"><h2 class="k-violet" data-ico="📈">อัตราการใช้รายช่วง</h2><span id="chartHint"></span></div>
       <div class="chart-wrap">
-        <svg id="chart" class="chart" viewBox="0 0 600 170" preserveAspectRatio="none" role="img" aria-label="กราฟอัตราใช้ไฟ">
+        <svg id="chart" class="chart" viewBox="0 0 600 170" preserveAspectRatio="none" role="img" aria-label="กราฟอัตราการใช้">
           <defs>
             <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#f2f3f5" stop-opacity=".14"/>
-              <stop offset="100%" stop-color="#f2f3f5" stop-opacity="0"/>
+              <stop offset="0%" stop-color="#7dd3fc" stop-opacity=".18"/>
+              <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
             </linearGradient>
           </defs>
         </svg>
       </div>
-    </section>
-
-    <section class="card">
-      <div class="card-h"><h2 class="k-amber" data-ico="🧭">ทริป</h2><span id="tripCount"></span></div>
-      <div style="padding:10px 18px 0"><button id="copyTrips" class="del" style="margin-top:0" type="button">📋 คัดลอกสรุปทริป</button></div>
-      <div id="trips" style="padding-top:8px"></div>
     </section>
 
     <section class="card">
@@ -548,6 +531,12 @@
         <select id="routeSel" aria-label="เลือกทริป"></select>
         <div id="routeBody"></div>
       </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2 class="k-amber" data-ico="🧭">ทริป</h2><span id="tripCount"></span></div>
+      <div style="padding:10px 18px 0"><button id="copyTrips" class="del" style="margin-top:0" type="button">📋 คัดลอกสรุปทริป</button></div>
+      <div id="trips" style="padding-top:8px"></div>
     </section>
 
     <section class="card">
@@ -569,14 +558,13 @@
       <div class="card-h"><h2 class="k-teal" data-ico="💰">คิดค่าแต่ละช่วง</h2><span id="legCount"></span></div>
       <div class="stats" style="padding-top:16px">
         <div class="stat"><div class="k">ระยะรวม</div><div class="v" id="cKm">–</div></div>
-        <div class="stat"><div class="k">kWh / 100 km</div><div class="v" id="cCons">–</div></div>
+        <div class="stat"><div class="k">อัตราการใช้</div><div class="v" id="cCons">–</div></div>
         <div class="stat"><div class="k">฿ / km</div><div class="v" id="cCostKm">–</div></div>
       </div>
       <div id="legs" style="padding-top:8px"></div>
     </section>
   </div>
 </main>
-
 </div>
 
 <!-- ============ ป็อปอัพตั้งค่ารถ ============ -->
@@ -585,8 +573,8 @@
   <div class="sheet-panel" role="dialog" aria-label="ตั้งค่ารถ">
     <div class="card-h" style="padding:0 0 14px"><h2 class="k-sky" data-ico="⚙️">ตั้งค่ารถ</h2><span>ตั้งครั้งเดียว</span></div>
     <div class="car">
-      <label class="field"><span class="lab">รุ่น</span><input id="model" placeholder="Tesla Model 3"></label>
-      <div class="grid">
+      <label class="field"><span class="lab">รุ่น</span><input id="model" placeholder="เช่น Tesla Model 3"></label>
+      <div class="grid ev-only">
         <label class="field"><span class="lab">ความจุ <em>kWh</em></span><input id="capacity" class="num" type="number" step="0.1" min="0" inputmode="decimal"></label>
         <label class="field"><span class="lab">ราคา DC <em>฿/kWh</em></span><input id="dcPrice" class="num" type="number" step="0.01" min="0" inputmode="decimal"></label>
       </div>
@@ -606,15 +594,20 @@
    ========================================================= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyNs5F_4gKsvEwIagsyD69asw-g63Ws9F8SlSuqsn23WS8z7DqnGXd8JqlUlAXMsD7TUQ/exec';
 
-/* ---------- helpers ---------- */
+/* ---------- ค่าคงที่และตัวช่วย ---------- */
 const $ = id => document.getElementById(id);
-const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ' };
-// ชื่อขั้นตอนแบบมีลำดับจุดชาร์จ เช่น "ชาร์จจุดที่ 1"
+const UNIT = {
+  ev:   { cons: 'kWh/100km', en: 'kWh', name: 'EV Tracker', noCar: 'รถไฟฟ้าของฉัน' },
+  fuel: { cons: 'L/100km',   en: 'ลิตร', name: 'Fuel Tracker', noCar: 'รถน้ำมันของฉัน' },
+};
+const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ', refuel: 'เติมน้ำมัน' };
 const stepName = (ev, no) => {
   if (ev === 'chargeStart') return `ถึงจุดชาร์จที่ ${no}`;
   if (ev === 'chargeEnd' || ev === 'charge') return `ชาร์จจุดที่ ${no}`;
+  if (ev === 'refuel') return `เติมน้ำมันครั้งที่ ${no}`;
   return LABEL[ev] || ev;
 };
+const EV_COLOR = { start: '#6ee7b7', drive: '#7dd3fc', chargeStart: '#fcd34d', chargeEnd: '#f5b942', charge: '#f5b942', refuel: '#fcd34d', end: '#fda4af' };
 const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
 const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
 const sum = a => a.reduce((x, y) => x + y, 0);
@@ -630,27 +623,18 @@ const fmtDur = min => {
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const nowLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 
+/* ---------- สถานะ ---------- */
+let V = 'ev';                       // ประเภทรถที่เลือกอยู่
 let D = { entries: [], settings: {} };
 let busy = false;
 let lastTrips = [];
 let lastRes = null;
+const U = () => UNIT[V];
+const vOf = e => e.vehicle || 'ev';
+const myEntries = () => D.entries.filter(e => vOf(e) === V);
+const mySettings = () => (V === 'ev' ? D.settings || {} : { model: (D.settings || {}).fuel_model || '' });
 
-/* ---------- GPS ----------
-   ปัดพิกัดให้เป็นกริดขนาดประมาณ 30 เมตร (0.0003 องศา) เพื่อความเป็นส่วนตัว
-   ลดเป็น 0.00003 ถ้าอยากได้ประมาณ 3 เมตร */
-const GPS_GRID = 0.0003;
-const roundGps = v => Number((Math.round(v / GPS_GRID) * GPS_GRID).toFixed(6));
-function getPos() {
-  return new Promise(resolve => {
-    if (!navigator.geolocation) return resolve(null);
-    navigator.geolocation.getCurrentPosition(
-      p => resolve({ lat: roundGps(p.coords.latitude), lng: roundGps(p.coords.longitude) }),
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 120000 });
-  });
-}
-
-/* ---------- api ---------- */
+/* ---------- API ---------- */
 async function apiGet() {
   const r = await fetch(API_URL + '?action=getData', { cache: 'no-store' });
   return unwrap(await r.json());
@@ -667,13 +651,11 @@ function unwrap(j) {
   if (!j.ok) throw new Error(j.error || 'unknown error');
   return j.data;
 }
-
 function setSync(text, isErr) {
   const el = $('sync');
   el.textContent = text;
   el.classList.toggle('err', !!isErr);
 }
-
 let toastTimer = null;
 function toast(text, isErr) {
   const t = $('toast');
@@ -683,13 +665,11 @@ function toast(text, isErr) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
 }
-
 function applyData(d) {
   D = d;
   render();
   setSync('ซิงก์ ' + fmtTime(new Date()));
 }
-
 async function load() {
   if (API_URL.startsWith('PASTE')) { $('configNotice').hidden = false; setSync('ยังไม่ตั้งค่า', true); return; }
   setSync('กำลังโหลด…');
@@ -697,169 +677,287 @@ async function load() {
   catch (err) { setSync('โหลดไม่สำเร็จ', true); toast('โหลดข้อมูลไม่สำเร็จ: ' + err.message, true); }
 }
 
-/* ---------- trips ---------- */
-const newBucket = () => ({ startTs: null, segs: [], charges: [] });
-
-function finishTrip(b, endTs, ended) {
-  const km = sum(b.segs.map(s => s.km));
-  const valid = b.segs.filter(s => s.valid);
-  const ekm = sum(valid.map(s => s.km));
-  const ekwh = sum(valid.map(s => s.kwh));
-  const charged = b.charges.filter(c => c.kwh !== null);
-  const costs = b.charges.filter(c => c.cost !== null);
-  const minutes = b.startTs && endTs ? (new Date(endTs) - new Date(b.startTs)) / 60000 : null;
-  return {
-    ended, startTs: b.startTs, endTs, minutes,
-    km, kwh: ekwh, cons: ekm > 0 ? (ekwh / ekm) * 100 : null,
-    charges: b.charges.length, chKwh: sum(charged.map(c => c.kwh)),
-    cost: costs.length ? sum(costs.map(c => c.cost)) : null,
-  };
+/* ---------- GPS ----------
+   ปัดพิกัดเป็นกริดประมาณ 30 เมตร (0.0003 องศา) เพื่อความเป็นส่วนตัว */
+const GPS_GRID = 0.0003;
+const roundGps = v => Number((Math.round(v / GPS_GRID) * GPS_GRID).toFixed(6));
+function getPos() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({ lat: roundGps(p.coords.latitude), lng: roundGps(p.coords.longitude) }),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 120000 });
+  });
 }
 
-/* ---------- calculation ---------- */
-function analyze(entries, st) {
+/* ---------- แบ่งทริปและจัดกลุ่ม ---------- */
+// ทริปคือช่วงที่ปิดด้วยบันทึก "สิ้นสุด"
+function groupTrips(entries) {
+  const sorted = [...entries].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  const groups = [];
+  let cur = [];
+  for (const e of sorted) {
+    cur.push(e);
+    if (e.event === 'end') { groups.push(cur); cur = []; }
+  }
+  if (cur.length) groups.push(cur);
+  return groups;
+}
+
+// สรุปทริปจากช่วงและรายการเติม/ชาร์จที่อยู่ในทริปนั้น
+function buildTrips(list, segs, refs) {
+  return groupTrips(list).map(g => {
+    const ids = new Set(g.map(e => e.id));
+    const ss = segs.filter(s => ids.has(s.id));
+    const rr = refs.filter(r => ids.has(r.id));
+    const valid = ss.filter(s => s.valid);
+    const km = sum(ss.map(s => s.km));
+    const vkm = sum(valid.map(s => s.km));
+    const used = sum(valid.map(s => s.en));
+    const costed = rr.filter(r => r.cost !== null);
+    const first = g[0].ts, last = g[g.length - 1].ts;
+    return {
+      ended: g[g.length - 1].event === 'end',
+      startTs: first,
+      minutes: (new Date(last) - new Date(first)) / 60000,
+      km, used,
+      cons: vkm > 0 ? (used / vkm) * 100 : null,
+      charges: rr.length,
+      chEn: sum(rr.filter(r => r.en !== null).map(r => r.en)),
+      cost: costed.length ? sum(costed.map(r => r.cost)) : null,
+    };
+  });
+}
+
+// อัตราการใช้ตามโหมดขับ
+function byModeOf(segs) {
+  const m = {};
+  segs.filter(s => s.valid).forEach(s => {
+    const k = s.mode || 'ไม่ระบุ';
+    const x = (m[k] = m[k] || { mode: k, km: 0, en: 0 });
+    x.km += s.km;
+    x.en += s.en;
+  });
+  return Object.values(m)
+    .map(x => ({ ...x, cons: x.km > 0 ? (x.en / x.km) * 100 : null }))
+    .sort((a, b) => b.km - a.km);
+}
+
+/* ---------- คำนวณรถไฟฟ้า (แบต %) ---------- */
+function analyzeEV(entries, st) {
   const cap = num(st.capacity) || 0;
   const price = num(st.dcPrice);
   const sorted = entries
     .filter(e => num(e.soc) !== null && (e.event === 'chargeEnd' || num(e.odo) !== null))
     .sort((a, b) => new Date(a.ts) - new Date(b.ts) || (num(a.odo) || 0) - (num(b.odo) || 0));
 
-  const segs = [], ch = [], warn = {}, trips = [];
-  const w = (id, m) => (warn[id] = warn[id] || []).push(m);
-  let state = null, pending = null, bucket = newBucket();
-  let chargeNo = 0;
-  const noById = {};
+  const segs = [], ch = [], warn = {}, noById = {}, segById = {}, chById = {};
+  const w = (id, m) => { (warn[id] = warn[id] || []).push(m); };
+  let state = null, pending = null, chargeNo = 0;
 
-  const addCharge = (id, start, endTs, socAfter, e) => {
+  const addCharge = (id, no, start, endTs, socAfter, e) => {
     const socBefore = start.soc;
     const gained = cap > 0 && socAfter !== null && socBefore !== null ? ((socAfter - socBefore) / 100) * cap : null;
     if (socAfter !== null && socBefore !== null && socAfter <= socBefore) w(id, 'แบตหลังชาร์จไม่เพิ่ม');
     const kin = num(e.kwh);
-    const kwh = kin !== null ? kin : gained;
+    const en = kin !== null ? kin : gained;
     const cin = num(e.cost);
-    const cost = cin !== null ? cin : (kwh !== null && price !== null ? kwh * price : null);
-    ch.push({
-      id, startTs: start.ts, ts: endTs,
+    const cost = cin !== null ? cin : (en !== null && price !== null ? en * price : null);
+    const c = {
+      id, no, startTs: start.ts, ts: endTs,
       minutes: (new Date(endTs) - new Date(start.ts)) / 60000,
-      no: chargeNo, socBefore, socAfter, kwh, kwhManual: kin !== null, gained, cost,
-    });
+      socBefore, socAfter, en, enManual: kin !== null, gained, cost,
+    };
+    ch.push(c);
+    chById[id] = c;
   };
 
   for (const e of sorted) {
-    const segMark = segs.length, chMark = ch.length;
-    // ลำดับจุดชาร์จ: ถึงจุดชาร์จและชาร์จเสร็จของครั้งเดียวกันใช้เลขเดียวกัน
-    const evNo = (e.event === 'chargeStart' || e.event === 'chargeEnd' || e.event === 'charge') ? chargeNo + 1 : undefined;
-    if (evNo !== undefined) noById[e.id] = evNo;
-    if (!bucket.startTs) bucket.startTs = e.ts;
     const soc = num(e.soc);
     let odo = num(e.odo);
+    const isCh = e.event === 'chargeStart' || e.event === 'chargeEnd' || e.event === 'charge';
+    const evNo = isCh ? chargeNo + 1 : undefined;
+    if (evNo !== undefined) noById[e.id] = evNo;
     if (e.event === 'chargeEnd') odo = pending ? pending.odo : (state ? state.odo : null);
     if (odo === null) continue;
 
-    // 1) ช่วงขับรถตั้งแต่บันทึกก่อนหน้า
+    // ช่วงขับจากบันทึกก่อนหน้า
     if (state) {
       const km = odo - state.odo, drop = state.soc - soc;
       if (km < 0) w(e.id, 'ไมล์ลดลง');
       if (km > 0) {
         if (drop < 0) w(e.id, 'แบตเพิ่มระหว่างวิ่ง');
         const valid = drop >= 0 && cap > 0;
-        const kwh = cap > 0 ? (drop / 100) * cap : null;
-        segs.push({
+        const en = cap > 0 ? (drop / 100) * cap : null;
+        const seg = {
           id: e.id,
           from: { ts: state.ts, odo: state.odo, soc: state.soc, event: state.event, no: state.no },
           to: { ts: e.ts, odo, soc, event: e.event, no: evNo },
           km, minutes: (new Date(e.ts) - new Date(state.ts)) / 60000,
-          kwh, valid, mode: e.mode || '',
-          cons: valid ? (kwh / km) * 100 : null,
+          en, valid, mode: e.mode || '',
+          cons: valid ? (en / km) * 100 : null,
           actualFull: drop > 0 ? (km / drop) * 100 : null,
           screenFull: state.range != null && state.soc > 0 ? (state.range / state.soc) * 100 : null,
-        });
+        };
+        segs.push(seg);
+        segById[e.id] = seg;
       }
     }
 
-    // 2) ประเภทของบันทึก
     if (e.event === 'chargeStart') {
       pending = { id: e.id, ts: e.ts, odo, soc };
       state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event, no: evNo };
     } else if (e.event === 'chargeEnd') {
       const start = pending || (state ? { ts: state.ts, soc: state.soc } : { ts: e.ts, soc: null });
       chargeNo++;
-      addCharge(e.id, start, e.ts, soc, e);
+      addCharge(e.id, evNo, start, e.ts, soc, e);
       pending = null;
       state = { odo, soc, range: null, ts: e.ts, event: e.event, no: evNo };
     } else if (e.event === 'charge') {
-      // ข้อมูลเก่า: ชาร์จเป็นบันทึกเดียว
+      // ข้อมูลเก่า: ชาร์จเป็นรายการเดียว
       const sa = num(e.socAfter);
       chargeNo++;
-      addCharge(e.id, { ts: e.ts, soc }, e.ts, sa, e);
+      addCharge(e.id, evNo, { ts: e.ts, soc }, e.ts, sa, e);
       state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts, event: e.event, no: evNo };
     } else {
-      state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event };
-    }
-
-    // 3) แบ่งทริปตามบันทึก "สิ้นสุด"
-    bucket.segs.push(...segs.slice(segMark));
-    bucket.charges.push(...ch.slice(chMark));
-    if (e.event === 'end') {
-      trips.push(finishTrip(bucket, e.ts, true));
-      bucket = newBucket();
+      state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event, no: undefined };
     }
   }
-  if (bucket.startTs && (bucket.segs.length || bucket.charges.length)) {
-    trips.push(finishTrip(bucket, null, false));
-  }
 
-  // ---------- สรุปผล ----------
+  const trips = buildTrips(sorted, segs, ch);
   const totalKm = sum(segs.map(s => s.km));
   const driveMin = sum(segs.map(s => s.minutes));
-  const eSegs = segs.filter(s => s.valid);
-  const ekm = sum(eSegs.map(s => s.km));
-  const ekwh = sum(eSegs.map(s => s.kwh));
+  const valid = segs.filter(s => s.valid);
+  const usedEn = sum(valid.map(s => s.en));
+  const vkm = sum(valid.map(s => s.km));
+  const avgCons = vkm > 0 ? (usedEn / vkm) * 100 : null;
   const withCost = ch.filter(c => c.cost !== null);
-  const totalCost = sum(withCost.map(c => c.cost));
-  const chKwh = sum(ch.filter(c => c.kwh !== null).map(c => c.kwh));
+  const totalCost = withCost.length ? sum(withCost.map(c => c.cost)) : null;
+  const chEn = sum(ch.filter(c => c.en !== null).map(c => c.en));
   const chMin = sum(ch.map(c => c.minutes));
-  const priced = ch.filter(c => c.cost !== null && c.kwh > 0);
-  const avgPrice = priced.length ? sum(priced.map(c => c.cost)) / sum(priced.map(c => c.kwh)) : null;
-  const avgCons = ekm > 0 ? (ekwh / ekm) * 100 : null;
-  const manual = ch.filter(c => c.kwhManual && c.gained !== null && c.kwh > 0);
-  const eff = manual.length ? sum(manual.map(c => c.gained)) / sum(manual.map(c => c.kwh)) : null;
+  const priced = ch.filter(c => c.cost !== null && c.en > 0);
+  const avgPrice = priced.length ? sum(priced.map(c => c.cost)) / sum(priced.map(c => c.en)) : null;
+  const manual = ch.filter(c => c.enManual && c.gained !== null && c.en > 0);
+  const eff = manual.length ? sum(manual.map(c => c.gained)) / sum(manual.map(c => c.en)) : null;
   const cmp = segs.filter(s => s.screenFull !== null && s.actualFull !== null);
   const screenAvg = avg(cmp.map(s => s.screenFull));
   const actualAvg = avg(cmp.map(s => s.actualFull));
 
-  // ค่าไฟต่อ km ของแต่ละช่วง: ใช้ราคา DC ที่ตั้งไว้ ถ้าไม่มีใช้ราคาเฉลี่ยจากการชาร์จจริง
+  // ราคาที่ใช้คิดต่อ km: ราคา DC ที่ตั้งไว้ ถ้าไม่มีใช้ราคาเฉลี่ยจากการชาร์จจริง
   const legPrice = price !== null ? price : avgPrice;
   segs.forEach(s => { s.costPerKm = s.cons !== null && legPrice !== null ? (s.cons / 100) * legPrice : null; });
 
-  const modeMap = {};
-  for (const s of eSegs) {
-    const k = s.mode || 'ไม่ระบุ';
-    const m = (modeMap[k] = modeMap[k] || { mode: k, km: 0, kwh: 0 });
-    m.km += s.km; m.kwh += s.kwh;
-  }
-  const byMode = Object.values(modeMap)
-    .map(m => ({ ...m, cons: m.km > 0 ? (m.kwh / m.km) * 100 : null }))
-    .sort((a, b) => b.km - a.km);
-
-  const segById = {}, chById = {};
-  segs.forEach(s => segById[s.id] = s);
-  ch.forEach(c => chById[c.id] = c);
-
   return {
-    segs, ch, warn, segById, chById, noById, byMode, trips,
+    segs, ch, warn, segById, chById, noById, trips,
+    byMode: byModeOf(segs),
+    points: segs.filter(s => s.cons !== null).map(s => ({ cons: s.cons, to: s.to })),
     t: {
-      totalKm, driveMin, chMin, energyKwh: ekwh, avgCons, chKwh, totalCost,
-      missing: ch.length - withCost.length, avgPrice,
-      costPerKm: totalKm > 0 && withCost.length ? totalCost / totalKm : null,
+      totalKm, driveMin, chMin, usedEn, chEn, avgCons, totalCost, avgPrice,
+      costPerKm: totalKm > 0 && totalCost !== null ? totalCost / totalKm : null,
       estCostPerKm: avgCons !== null && legPrice !== null ? (avgCons / 100) * legPrice : null,
       eff, screenAvg, actualAvg,
       gapPct: screenAvg && actualAvg ? ((screenAvg - actualAvg) / actualAvg) * 100 : null,
+      missing: ch.length - withCost.length,
     },
   };
 }
 
-/* ---------- form ---------- */
+/* ---------- คำนวณรถน้ำมัน (เติมลิตร + ราคา, บางครั้งเติมไม่เต็ม) ----------
+   วิธี: จุดเริ่มคือการเติมเต็มครั้งล่าสุด
+   เมื่อถึงการเติมเต็มครั้งถัดไป: อัตรา = ลิตรที่เติมทั้งหมดในช่วง ÷ ระยะ × 100
+   ช่วงขับในระหว่างนั้นจะได้อัตรานี้ (เป็นค่าเฉลี่ย ไม่ใช่วัดจริงรายช่วง) */
+function analyzeFuel(entries) {
+  const sorted = entries
+    .filter(e => num(e.odo) !== null)
+    .sort((a, b) => new Date(a.ts) - new Date(b.ts) || num(a.odo) - num(b.odo));
+
+  const segs = [], refs = [], warn = {}, noById = {}, segById = {}, chById = {};
+  const intervals = [];
+  let state = null, anchor = null, accL = 0, pendingLegs = [], refNo = 0;
+
+  for (const e of sorted) {
+    const odo = num(e.odo);
+    const isRef = e.event === 'refuel';
+    const evNo = isRef ? refNo + 1 : undefined;
+    if (isRef) noById[e.id] = evNo;
+
+    if (state) {
+      const km = odo - state.odo;
+      if (km < 0) warn[e.id] = ['ไมล์ลดลง'];
+      if (km > 0) {
+        const seg = {
+          id: e.id,
+          from: { ts: state.ts, odo: state.odo, event: state.event, no: state.no },
+          to: { ts: e.ts, odo, event: e.event, no: evNo },
+          km, minutes: (new Date(e.ts) - new Date(state.ts)) / 60000,
+          en: null, cons: null, valid: false, mode: e.mode || '',
+        };
+        segs.push(seg);
+        segById[e.id] = seg;
+        pendingLegs.push(seg);
+      }
+    }
+
+    if (isRef) {
+      refNo++;
+      const liters = num(e.liters);
+      const r = {
+        id: e.id, no: evNo, ts: e.ts, startTs: null, minutes: null,
+        en: liters, cost: num(e.cost), full: !!num(e.full), cons: null,
+      };
+      refs.push(r);
+      chById[e.id] = r;
+      if (liters !== null && anchor) accL += liters;
+      if (r.full) {
+        if (anchor) {
+          const km = odo - anchor.odo;
+          if (km > 0 && accL > 0) {
+            const cons = (accL / km) * 100;
+            r.cons = cons;
+            intervals.push({ km, liters: accL, cons, ts: e.ts });
+            pendingLegs.forEach(s => { s.cons = cons; s.en = (s.km * cons) / 100; s.valid = true; });
+          }
+        }
+        anchor = { odo };
+        accL = 0;
+        pendingLegs = [];
+      }
+    }
+
+    state = { odo, ts: e.ts, event: e.event, no: evNo };
+  }
+
+  const trips = buildTrips(sorted, segs, refs);
+  const totalKm = sum(segs.map(s => s.km));
+  const driveMin = sum(segs.map(s => s.minutes));
+  const usedEn = sum(segs.filter(s => s.valid).map(s => s.en));
+  const ikm = sum(intervals.map(i => i.km));
+  const ilit = sum(intervals.map(i => i.liters));
+  const avgCons = ikm > 0 ? (ilit / ikm) * 100 : null;
+  const priced = refs.filter(r => r.cost !== null && r.en > 0);
+  const avgPrice = priced.length ? sum(priced.map(r => r.cost)) / sum(priced.map(r => r.en)) : null;
+  const costed = refs.filter(r => r.cost !== null);
+  const totalCost = costed.length ? sum(costed.map(r => r.cost)) : null;
+  const chEn = sum(refs.filter(r => r.en !== null).map(r => r.en));
+
+  segs.forEach(s => { s.costPerKm = s.cons !== null && avgPrice !== null ? (s.cons / 100) * avgPrice : null; });
+
+  return {
+    segs, ch: refs, warn, segById, chById, noById, trips,
+    byMode: byModeOf(segs),
+    points: intervals.map(i => ({ cons: i.cons, to: { ts: i.ts } })),
+    t: {
+      totalKm, driveMin, chMin: null, usedEn, chEn, avgCons, totalCost, avgPrice,
+      costPerKm: totalKm > 0 && totalCost !== null ? totalCost / totalKm : null,
+      estCostPerKm: avgCons !== null && avgPrice !== null ? (avgCons / 100) * avgPrice : null,
+      eff: null, screenAvg: null, actualAvg: null, gapPct: null,
+      missing: refs.length - costed.length,
+    },
+  };
+}
+
+/* ---------- ฟอร์ม ---------- */
 const form = $('form');
 const eventType = () => form.querySelector('input[name=event]:checked').value;
 
@@ -871,20 +969,22 @@ function updateEventUI() {
   $('wrapRange').hidden = isEnd;
   $('wrapMode').hidden = isEnd;
   $('chargeFields').hidden = !isEnd;
+  $('fuelFields').hidden = t !== 'refuel';
   $('socLabel').textContent = t === 'chargeStart' ? 'แบตก่อนชาร์จ' : isEnd ? 'แบตหลังชาร์จ' : 'แบต';
 }
 form.querySelectorAll('input[name=event]').forEach(r => r.addEventListener('change', updateEventUI));
 
 function resetForm() {
-  ['odo', 'soc', 'range', 'trip', 'kwh', 'cost', 'note'].forEach(id => ($(id).value = ''));
+  ['odo', 'soc', 'range', 'trip', 'kwh', 'cost', 'fcost', 'liters', 'note'].forEach(id => ($(id).value = ''));
+  $('full').checked = false;
   $('time').value = nowLocal();
   updateEventUI();
   refreshPlaceholders();
 }
 
 function refreshPlaceholders() {
-  const withOdo = [...D.entries].filter(e => num(e.odo) !== null).sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
-  if (withOdo) $('odo').placeholder = 'ล่าสุด ' + f(num(withOdo.odo), 1);
+  const latest = myEntries().filter(e => num(e.odo) !== null).sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
+  if (latest) $('odo').placeholder = 'ล่าสุด ' + f(num(latest.odo), 1);
 }
 
 form.addEventListener('submit', async e => {
@@ -896,30 +996,43 @@ form.addEventListener('submit', async e => {
 
   const ts = new Date(v('time'));
   if (isNaN(ts)) return msg('กรุณาใส่เวลา', true);
-  const soc = num(v('soc'));
-  if (soc === null || soc < 0 || soc > 100) return msg('แบตต้องอยู่ระหว่าง 0 ถึง 100', true);
 
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    ts: ts.toISOString(), event: type, odo: null, soc,
+    ts: ts.toISOString(), event: type, vehicle: V, odo: null, soc: '',
     range: '', trip: v('trip') === '' ? '' : num(v('trip')),
-    mode: '', note: v('note'), socAfter: '', kwh: '', cost: '',
+    mode: '', note: v('note'), socAfter: '', kwh: '', cost: '', liters: '', full: '',
   };
+
+  if (V === 'ev') {
+    const soc = num(v('soc'));
+    if (soc === null || soc < 0 || soc > 100) return msg('แบตต้องอยู่ระหว่าง 0 ถึง 100', true);
+    entry.soc = soc;
+  }
   if (type !== 'chargeEnd') {
     const odo = num(v('odo'));
     if (odo === null) return msg('กรุณาใส่เลขไมล์', true);
     entry.odo = odo;
-    entry.range = v('range') === '' ? '' : num(v('range'));
     entry.mode = v('mode');
-  } else {
+    if (V === 'ev') entry.range = v('range') === '' ? '' : num(v('range'));
+  }
+  if (type === 'chargeEnd') {
     entry.kwh = v('kwh') === '' ? '' : num(v('kwh'));
     entry.cost = v('cost') === '' ? '' : num(v('cost'));
+  }
+  if (type === 'refuel') {
+    const liters = num(v('liters'));
+    if (liters === null || liters <= 0) return msg('กรุณาใส่จำนวนลิตร', true);
+    entry.liters = liters;
+    entry.cost = v('fcost') === '' ? '' : num(v('fcost'));
+    entry.full = $('full').checked ? 1 : '';
   }
 
   msg('กำลังหาตำแหน่ง…');
   const p = await getPos();
   entry.lat = p ? p.lat : '';
   entry.lng = p ? p.lng : '';
+
   busy = true;
   $('submitBtn').disabled = true;
   msg('กำลังบันทึก…');
@@ -939,14 +1052,13 @@ form.addEventListener('submit', async e => {
 
 /* ---------- ป็อปอัพตั้งค่ารถ ---------- */
 function openCar() {
-  const s = D.settings || {};
+  const s = mySettings();
   $('model').value = s.model || '';
-  $('capacity').value = s.capacity || '';
-  $('dcPrice').value = s.dcPrice || '';
+  $('capacity').value = V === 'ev' ? (s.capacity || '') : '';
+  $('dcPrice').value = V === 'ev' ? (s.dcPrice || '') : '';
   $('carSheet').hidden = false;
 }
 function closeCar() { $('carSheet').hidden = true; }
-
 $('carBtn').addEventListener('click', openCar);
 $('carCancel').addEventListener('click', closeCar);
 $('carBg').addEventListener('click', closeCar);
@@ -954,11 +1066,12 @@ $('carSave').addEventListener('click', async () => {
   if (busy) return;
   busy = true;
   $('carSave').disabled = true;
+  const model = $('model').value.trim();
+  const settings = V === 'ev'
+    ? { model, capacity: $('capacity').value, dcPrice: $('dcPrice').value }
+    : { fuel_model: model };
   try {
-    applyData(await apiPost({
-      action: 'saveSettings',
-      settings: { model: $('model').value.trim(), capacity: $('capacity').value, dcPrice: $('dcPrice').value },
-    }));
+    applyData(await apiPost({ action: 'saveSettings', settings }));
     closeCar();
     toast('บันทึกการตั้งค่าแล้ว');
   } catch (err) {
@@ -977,53 +1090,72 @@ document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click'
   window.scrollTo({ top: 0 });
 }));
 
-/* ---------- render ---------- */
-function setStat(id, value, unit) {
-  $(id).innerHTML = `${value}${unit ? `<small>${unit}</small>` : ''}`;
+/* ---------- ตัววาด ---------- */
+function statTiles(t) {
+  if (V === 'ev') {
+    return [
+      ['พลังงานที่ใช้', f(t.usedEn, 1), 'kWh'],
+      ['ชาร์จรวม', f(t.chEn, 1), 'kWh'],
+      ['ค่าชาร์จรวม', t.totalCost === null ? '–' : f(t.totalCost, 0), '฿'],
+      ['ค่าไฟต่อ km', f(t.estCostPerKm, 2), '฿'],
+      ['ค่าจริงต่อ km', f(t.costPerKm, 2), '฿'],
+      ['ประสิทธิภาพชาร์จ', t.eff === null ? '–' : f(t.eff * 100, 0), t.eff === null ? '' : '%'],
+    ];
+  }
+  return [
+    ['น้ำมันที่ใช้ (ประมาณ)', f(t.usedEn, 1), 'ลิตร'],
+    ['เติมรวม', f(t.chEn, 1), 'ลิตร'],
+    ['ค่าน้ำมันรวม', t.totalCost === null ? '–' : f(t.totalCost, 0), '฿'],
+    ['ค่าน้ำมันต่อ km', f(t.estCostPerKm, 2), '฿'],
+    ['ค่าจริงต่อ km', f(t.costPerKm, 2), '฿'],
+    ['km / ลิตร', t.avgCons ? f(100 / t.avgCons, 1) : '–', 'km/L'],
+  ];
 }
 
 function render() {
-  const s = D.settings || {};
-  $('carName').textContent = s.model ? s.model : 'รถของฉัน';
+  const u = U();
+  const ents = myEntries();
+  const st = mySettings();
+  $('carName').textContent = st.model || u.noCar;
   if (!$('time').value) resetForm();
   refreshPlaceholders();
 
-  const res = analyze(D.entries, s);
+  const res = V === 'ev' ? analyzeEV(ents, D.settings || {}) : analyzeFuel(ents);
+  lastRes = res;
   const t = res.t;
-  const sorted = [...D.entries].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const sorted = [...ents].sort((a, b) => new Date(b.ts) - new Date(a.ts));
   const last = sorted[0];
   const lastOdo = last ? num(last.odo) : null;
 
+  $('heroLbl').textContent = V === 'ev' ? 'อัตราใช้ไฟเฉลี่ย' : 'อัตราใช้น้ำมันเฉลี่ย';
   $('last').textContent = last ? fmtDate(last.ts) + (lastOdo !== null ? ' · ' + f(lastOdo, 1) + ' km' : '') : '';
   $('count').textContent = sorted.length ? `${sorted.length} รายการ` : '';
-
-  $('bigCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>kWh/100km</small>`;
+  $('bigCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>${u.cons}</small>`;
   $('bigKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
-  setStat('sEnergy', f(t.energyKwh, 1), 'kWh');
-  setStat('sCharged', f(t.chKwh, 1), 'kWh');
-  setStat('sCost', f(t.totalCost, 0), '฿');
-  setStat('sEst', f(t.estCostPerKm, 2), '฿');
-  setStat('sCostKm', f(t.costPerKm, 2), '฿');
-  setStat('sEff', t.eff === null ? '–' : f(t.eff * 100, 0), t.eff === null ? '' : '%');
+  $('stats').innerHTML = statTiles(t).map(([k, v, unit]) =>
+    `<div class="stat"><div class="k">${k}</div><div class="v">${v}${unit ? `<small>${unit}</small>` : ''}</div></div>`).join('');
 
-  const maxKm = Math.max(t.screenAvg || 0, t.actualAvg || 0, 1);
-  $('barScreen').style.width = t.screenAvg ? (t.screenAvg / maxKm * 100) + '%' : '0%';
-  $('barActual').style.width = t.actualAvg ? (t.actualAvg / maxKm * 100) + '%' : '0%';
-  $('valScreen').textContent = t.screenAvg ? f(t.screenAvg, 0) + ' km' : '–';
-  $('valActual').textContent = t.actualAvg ? f(t.actualAvg, 0) + ' km' : '–';
-  $('gapNote').textContent = t.gapPct === null
-    ? 'ต้องมีช่วงที่มีทั้งระยะบนจอและแบต% เพื่อเทียบ'
-    : (t.gapPct >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(t.gapPct), 1) + '%'
-      + (t.missing ? ` · ไม่มีค่าชาร์จ ${t.missing} ครั้ง` : '');
-  $('timeLine').innerHTML = `เวลาขับรวม <b>${fmtDur(t.driveMin)}</b> · เวลาชาร์จรวม <b>${fmtDur(t.chMin)}</b>`;
+  // เทียบระยะบนจอกับระยะจริง (เฉพาะรถไฟฟ้า)
+  if (V === 'ev') {
+    const maxKm = Math.max(t.screenAvg || 0, t.actualAvg || 0, 1);
+    $('barScreen').style.width = t.screenAvg ? (t.screenAvg / maxKm * 100) + '%' : '0%';
+    $('barActual').style.width = t.actualAvg ? (t.actualAvg / maxKm * 100) + '%' : '0%';
+    $('valScreen').textContent = t.screenAvg ? f(t.screenAvg, 0) + ' km' : '–';
+    $('valActual').textContent = t.actualAvg ? f(t.actualAvg, 0) + ' km' : '–';
+    $('gapNote').textContent = t.gapPct === null
+      ? 'ต้องมีช่วงที่มีทั้งระยะบนจอและแบต% เพื่อเทียบ'
+      : (t.gapPct >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(t.gapPct), 1) + '%'
+        + (t.missing ? ` · ไม่มีค่าชาร์จ ${t.missing} ครั้ง` : '');
+  }
+  $('timeLine').innerHTML = `เวลาขับรวม <b>${fmtDur(t.driveMin)}</b>`
+    + (t.chMin !== null ? ` · เวลาชาร์จรวม <b>${fmtDur(t.chMin)}</b>` : '');
 
-  renderChart(res.segs.filter(s => s.cons !== null));
+  renderChart(res.points);
+  renderRoute(res);
   renderTrips(res.trips);
   renderModes(res.byMode);
   renderHistory(sorted, res);
   renderLegs(res);
-  lastRes = res;
-  renderRoute(res);
 }
 
 function renderChart(pts) {
@@ -1055,6 +1187,7 @@ function renderChart(pts) {
 }
 
 function renderTrips(trips) {
+  const u = U();
   lastTrips = trips;
   const list = [...trips].reverse();
   $('tripCount').textContent = list.length ? `${list.length} ทริป` : '';
@@ -1064,32 +1197,33 @@ function renderTrips(trips) {
         return `
       <div class="trip">
         <div class="trip-h">
-          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'}${tr.minutes !== null ? ' · ' + fmtDur(tr.minutes) : ''}</span></div>
+          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'} · ${fmtDur(tr.minutes)}</span></div>
           <span class="tag ${tr.ended ? 'dc' : ''}">${tr.ended ? 'สิ้นสุด' : 'ยังไม่จบ'}</span>
         </div>
         <div class="kv">
           <div><span>ระยะทาง</span><b>${f(tr.km, 1)} km</b></div>
-          <div><span>อัตราใช้ไฟ</span><b>${f(tr.cons, 1)} /100km</b></div>
-          <div><span>พลังงานที่ใช้</span><b>${f(tr.kwh, 1)} kWh</b></div>
-          <div><span>ชาร์จ</span><b>${tr.charges} ครั้ง · ${f(tr.chKwh, 1)} kWh</b></div>
-          <div><span>ค่าชาร์จ</span><b>${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}</b></div>
+          <div><span>อัตราการใช้</span><b>${f(tr.cons, 1)} ${u.cons}</b></div>
+          <div><span>${V === 'ev' ? 'พลังงานที่ใช้' : 'น้ำมันที่ใช้ (ประมาณ)'}</span><b>${f(tr.used, 2)} ${u.en}</b></div>
+          <div><span>${V === 'ev' ? 'ชาร์จ' : 'เติม'}</span><b>${tr.charges} ครั้ง · ${f(tr.chEn, 1)} ${u.en}</b></div>
+          <div><span>ค่าใช้จ่าย</span><b>${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}</b></div>
         </div>
       </div>`;
       }).join('')
-    : '<div class="empty">ยังไม่มีทริป กดบันทึก “สิ้นสุดทริป” เมื่อถึงที่หมาย</div>';
+    : '<div class="empty">ยังไม่มีทริป กดบันทึก “สิ้นสุด” เมื่อถึงที่หมาย</div>';
 }
 
 function tripSummaryText(trips) {
+  const u = U();
   const list = [...trips].reverse();
   return list.map((tr, i) => {
     const n = list.length - i;
     const when = tr.startTs ? fmtDate(tr.startTs) : '';
-    const dur = tr.minutes !== null ? ' (' + fmtDur(tr.minutes) + ')' : '';
+    const dur = ' (' + fmtDur(tr.minutes) + ')';
     const head = `ทริป ${n} · ${when}${dur}${tr.ended ? '' : ' · ยังไม่จบ'}`;
     return [
       head,
-      `ระยะทาง ${f(tr.km, 1)} km · ใช้ไฟ ${f(tr.cons, 1)} kWh/100km · พลังงาน ${f(tr.kwh, 2)} kWh`,
-      `ชาร์จ ${tr.charges} ครั้ง ${f(tr.chKwh, 2)} kWh · ค่าชาร์จ ${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}`,
+      `ระยะทาง ${f(tr.km, 1)} km · ใช้ ${f(tr.cons, 1)} ${u.cons} · ${u.en} ${f(tr.used, 2)}`,
+      `${V === 'ev' ? 'ชาร์จ' : 'เติม'} ${tr.charges} ครั้ง ${f(tr.chEn, 2)} ${u.en} · ค่าใช้จ่าย ${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}`,
     ].join('\n');
   }).join('\n\n');
 }
@@ -1106,39 +1240,48 @@ document.addEventListener('click', async e => {
 });
 
 function renderModes(rows) {
+  const u = U();
   $('modes').innerHTML = rows.length
     ? rows.map(m => `
       <div class="row">
         <div class="t">${esc(m.mode)}</div>
-        <div class="m">${f(m.cons, 1)}<span style="font-family:var(--font);font-size:12px;color:var(--muted)"> kWh/100km</span></div>
-        <div class="s">${f(m.km, 1)} km · ${f(m.kwh, 2)} kWh</div>
+        <div class="m">${f(m.cons, 1)}<span class="unit"> ${u.cons}</span></div>
+        <div class="s">${f(m.km, 1)} km · ${f(m.en, 2)} ${u.en}</div>
       </div>`).join('')
     : '<div class="empty">ยังไม่มีข้อมูลตามโหมด</div>';
 }
 
 function renderHistory(sorted, res) {
-  if (!sorted.length) { $('hist').innerHTML = '<div class="empty">ยังไม่มีบันทึก เริ่มจากกรอก “เริ่มต้น”</div>'; return; }
+  const u = U();
+  if (!sorted.length) {
+    $('hist').innerHTML = '<div class="empty">ยังไม่มีบันทึก เริ่มจากกรอก “เริ่มต้น”</div>';
+    return;
+  }
   $('hist').innerHTML = sorted.map(e => {
     const seg = res.segById[e.id], c = res.chById[e.id];
-    const odo = num(e.odo);
-    const socTxt = e.event === 'chargeEnd' ? `→ ${f(e.soc, 0)}%` : `${f(e.soc, 0)}%`;
+    const odo = num(e.odo), soc = num(e.soc);
+    const titleMain = odo !== null
+      ? f(odo, 1) + '<small>km' + (soc !== null ? ' · ' + f(soc, 0) + '%' : '') + '</small>'
+      : '–';
     const lines = [];
-    if (seg) lines.push(`${stepName(seg.from.event, seg.from.no)} → ${fmtTime(seg.from.ts)} · ${fmtDur(seg.minutes)} · ${f(seg.km, 1)} km` + (seg.cons !== null ? ` · ${f(seg.cons, 1)}/100km` : ''));
-    if (c) lines.push(`ชาร์จ ${fmtDur(c.minutes)} · ${f(c.socBefore, 0)}→${f(c.socAfter, 0)}% · ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
+    if (seg) lines.push(`${stepName(seg.from.event, seg.from.no)} → ${fmtTime(seg.from.ts)} · ${fmtDur(seg.minutes)} · ${f(seg.km, 1)} km` + (seg.cons !== null ? ` · ${f(seg.cons, 1)} ${u.cons}` : ''));
+    if (c) lines.push((V === 'ev' ? 'ชาร์จ ' : 'เติม ') + (c.en !== null ? f(c.en, 2) + ' ' + u.en : '–') + (c.minutes !== null ? ` · ${fmtDur(c.minutes)}` : '') + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : '') + (c.en > 0 && c.cost !== null ? ` · ${f(c.cost / c.en, 2)} ฿/${V === 'ev' ? 'kWh' : 'ลิตร'}` : ''));
     const notes = [];
-    if (e.range !== null && e.range !== '') notes.push(`จอ ${f(num(e.range), 1)} km`);
-    if (e.trip !== null && e.trip !== '') notes.push(`trip ${f(num(e.trip), 1)} km`);
+    if (num(e.range) !== null) notes.push(`จอ ${f(num(e.range), 1)} km`);
+    if (num(e.trip) !== null) notes.push(`trip ${f(num(e.trip), 1)} km`);
     if (e.mode) notes.push(e.mode);
+    if (e.event === 'refuel') notes.push(num(e.full) ? 'เติมเต็ม' : 'เติมไม่เต็ม');
     if (e.note) notes.push(e.note);
     const warns = res.warn[e.id];
     const d = new Date(e.ts);
+    const tagCls = e.event === 'chargeEnd' || e.event === 'refuel' ? 'dc' : '';
     return `
       <div class="hist-item">
         <div class="when"><b>${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</b>${fmtTime(e.ts)}</div>
         <div class="hist-main">
           <div class="hist-top">
-            <div class="hist-title">${odo !== null ? f(odo, 1) + '<small>km · ' + socTxt + '</small>' : socTxt}</div>
-            <span class="tag ${e.event === 'chargeEnd' ? 'dc' : ''}">${stepName(e.event, res.noById[e.id])}</span>
+            <div class="hist-title">${titleMain}</div>
+            <span class="tag ${tagCls}">${esc(stepName(e.event, res.noById[e.id]))}</span>
           </div>
           ${lines.map(l => `<div class="hist-line">${esc(l)}</div>`).join('')}
           ${notes.length ? `<div class="hist-note">${esc(notes.join(' · '))}</div>` : ''}
@@ -1149,23 +1292,101 @@ function renderHistory(sorted, res) {
   }).join('');
 }
 
-/* ---------- เส้นทาง: แยกทริปตามบันทึกสิ้นสุด แล้ววาดจาก GPS ---------- */
-const EV_COLOR = { start: '#6ee7b7', drive: '#7dd3fc', chargeStart: '#fcd34d', chargeEnd: '#f5b942', charge: '#f5b942', end: '#fda4af' };
+/* ---------- คิดค่า ---------- */
+function legHtml(s) {
+  const u = U();
+  return `
+    <div class="li">
+      <div class="li-kind">🛣️ ขับรถ</div>
+      <div class="li-h"><b>${esc(stepName(s.from.event, s.from.no))} → ${esc(stepName(s.to.event, s.to.no))}</b><span>${fmtTime(s.from.ts)} – ${fmtTime(s.to.ts)}</span></div>
+      <div class="kv">
+        <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
+        <div><span>เวลา</span><b>${fmtDur(s.minutes)}</b></div>
+        <div><span>${V === 'ev' ? 'พลังงานที่ใช้' : 'น้ำมัน (ประมาณ)'}</span><b>${s.en === null ? '–' : f(s.en, 2) + ' ' + u.en}</b></div>
+        <div><span>อัตราการใช้</span><b>${s.cons === null ? '–' : f(s.cons, 1) + ' ' + u.cons}</b></div>
+        <div><span>ค่าต่อ km</span><b>${s.costPerKm === null ? '–' : f(s.costPerKm, 2) + ' ฿'}</b></div>
+      </div>
+    </div>`;
+}
 
-function groupTrips(entries) {
-  const sorted = [...entries].sort((a, b) => new Date(a.ts) - new Date(b.ts));
-  const groups = [];
-  let cur = [];
-  for (const e of sorted) {
-    cur.push(e);
-    if (e.event === 'end') { groups.push(cur); cur = []; }
-  }
-  if (cur.length) groups.push(cur);
-  return groups;
+function chHtml(c) {
+  const u = U();
+  const isFuel = V === 'fuel';
+  const perUnit = c.cost !== null && c.en > 0 ? f(c.cost / c.en, 2) + (isFuel ? ' ฿/ลิตร' : ' ฿/kWh') : '–';
+  const head = isFuel ? `⛽ เติมน้ำมัน` : `🔌 ชาร์จ`;
+  return `
+    <div class="li charge">
+      <div class="li-kind">${head}</div>
+      <div class="li-h"><b>${esc(stepName(isFuel ? 'refuel' : 'chargeEnd', c.no))}</b><span>${c.startTs ? fmtTime(c.startTs) + ' – ' : ''}${fmtTime(c.ts)}</span></div>
+      <div class="kv">
+        ${isFuel
+          ? `<div><span>จำนวน</span><b>${f(c.en, 2)} ลิตร</b></div>
+             <div><span>ราคา</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>
+             <div><span>เติม</span><b>${c.full ? 'เต็มถัง' : 'ไม่เต็ม'}</b></div>`
+          : `<div><span>แบต</span><b>${f(c.socBefore, 0)} → ${f(c.socAfter, 0)}%</b></div>
+             <div><span>เวลาชาร์จ</span><b>${fmtDur(c.minutes)}</b></div>
+             <div><span>พลังงาน</span><b>${c.en === null ? '–' : f(c.en, 2) + ' kWh'}</b></div>
+             <div><span>ค่าชาร์จ</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>`}
+        <div><span>ราคาต่อหน่วย</span><b>${perUnit}</b></div>
+      </div>
+    </div>`;
+}
+
+function renderLegs(res) {
+  const t = res.t;
+  const u = U();
+  $('cKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
+  $('cCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>${u.cons}</small>`;
+  $('cCostKm').innerHTML = `${t.estCostPerKm === null ? '–' : f(t.estCostPerKm, 2)}<small>฿/km</small>`;
+  const items = [
+    ...res.segs.filter(s => s.km > 0).map(s => ({ ts: s.to.ts, html: legHtml(s) })),
+    ...res.ch.map(c => ({ ts: c.ts, html: chHtml(c) })),
+  ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  $('legCount').textContent = items.length ? `${items.length} รายการ` : '';
+  $('legs').innerHTML = items.length
+    ? items.map(i => i.html).join('')
+    : '<div class="empty">ยังไม่มีช่วงที่คิดค่าได้ ต้องมีบันทึกอย่างน้อย 2 รายการ</div>';
+}
+
+/* ---------- เส้นทาง ---------- */
+function routeSummary(group, res) {
+  const ids = new Set(group.map(e => e.id));
+  const ss = res.segs.filter(s => ids.has(s.id));
+  const valid = ss.filter(s => s.valid);
+  const km = sum(ss.map(s => s.km));
+  const mins = sum(ss.map(s => s.minutes));
+  const vkm = sum(valid.map(s => s.km));
+  const used = sum(valid.map(s => s.en));
+  const costs = res.ch.filter(c => ids.has(c.id) && c.cost !== null);
+  const cost = costs.length ? sum(costs.map(c => c.cost)) : null;
+  const cons = vkm > 0 ? (used / vkm) * 100 : null;
+  const items = [
+    ['ระยะทาง', `${f(km, 1)} km`],
+    ['เวลาขับ', fmtDur(mins)],
+    [U().cons, cons === null ? '–' : f(cons, 1)],
+    ['ค่าใช้จ่าย', cost === null ? '–' : `${f(cost, 0)} ฿`],
+  ];
+  return `<div class="rsum">${items.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+}
+
+// ข้อความรายละเอียดของแต่ละจุด (ใช้ทั้งรายการและป๊อปอัพบนแผนที่)
+function detailLines(p, res) {
+  const u = U();
+  const seg = res.segById[p.id], c = res.chById[p.id], no = res.noById[p.id];
+  const odo = num(p.odo), soc = num(p.soc);
+  const title = stepName(p.event, no);
+  const sub = [fmtTime(p.ts), odo !== null ? `${f(odo, 1)} km` : null, soc !== null ? `แบต ${f(soc, 0)}%` : null]
+    .filter(Boolean).join(' · ');
+  const extra = [];
+  if (seg) extra.push(`ช่วงก่อนหน้า ${f(seg.km, 1)} km · ${fmtDur(seg.minutes)}` + (seg.cons !== null ? ` · ${f(seg.cons, 1)} ${u.cons}` : ''));
+  if (c) extra.push(`${V === 'ev' ? 'ชาร์จ' : 'เติม'} ${c.en !== null ? f(c.en, 2) + ' ' + u.en : '–'}`
+    + (c.minutes !== null ? ` · ${fmtDur(c.minutes)}` : '')
+    + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
+  return { title, sub, extra };
 }
 
 function renderRoute(res) {
-  const groups = groupTrips(D.entries);
+  const groups = groupTrips(myEntries());
   const sel = $('routeSel');
   const prev = sel.value;
   if (!groups.length) {
@@ -1176,43 +1397,32 @@ function renderRoute(res) {
   sel.innerHTML = groups.map((g, i) => `<option value="${i}">ทริป ${i + 1} · ${fmtDate(g[0].ts)}</option>`).join('');
   const idx = prev !== '' && groups[+prev] ? +prev : groups.length - 1;
   sel.value = String(idx);
-  const pts = groups[idx].filter(e => num(e.lat) !== null && num(e.lng) !== null);
+  const group = groups[idx];
+  const pts = group.filter(e => num(e.lat) !== null && num(e.lng) !== null);
   $('routeBody').innerHTML = pts.length
-    ? routeSummary(groups[idx], res) + '<div id="routeMap" class="route-map"></div>' + routeList(groups[idx], res)
+    ? routeSummary(group, res) + '<div id="routeMap" class="route-map"></div>' + routeList(group, res)
     : '<div class="empty">ทริปนี้ยังไม่มีพิกัด GPS<br>บันทึกใหม่หลังอนุญาตตำแหน่งแล้วจะขึ้นเส้นทาง</div>';
   if (pts.length) showRoute(pts, res);
 }
 
-// สรุปของทริปที่เลือก: ระยะ เวลา อัตราใช้ไฟ ค่าชาร์จ
-function routeSummary(group, res) {
-  const ids = new Set(group.map(e => e.id));
-  const ss = res.segs.filter(s => ids.has(s.id));
-  const valid = ss.filter(s => s.valid);
-  const km = sum(ss.map(s => s.km));
-  const vkm = sum(valid.map(s => s.km));
-  const kwh = sum(valid.map(s => s.kwh));
-  const mins = sum(ss.map(s => s.minutes));
-  const cost = sum(res.ch.filter(c => ids.has(c.id) && c.cost !== null).map(c => c.cost));
-  const cons = vkm > 0 ? (kwh / vkm) * 100 : null;
-  const items = [
-    ['ระยะทาง', `${f(km, 1)} km`],
-    ['เวลาขับ', fmtDur(mins)],
-    ['kWh/100km', cons === null ? '–' : f(cons, 1)],
-    ['ค่าชาร์จ', cost ? `${f(cost, 0)} ฿` : '–'],
-  ];
-  return `<div class="rsum">${items.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+function routeList(entries, res) {
+  return `<div class="rlist">` + entries.map((p, i) => {
+    const d = detailLines(p, res);
+    const col = EV_COLOR[p.event] || '#fff';
+    return `<div class="rrow">
+      <span class="rdot" style="background:${col}">${i + 1}</span>
+      <div style="min-width:0">
+        <div class="rt">${esc(d.title)}</div>
+        <div class="rs">${esc(d.sub)}</div>
+        ${d.extra.map(x => `<div class="rx">${esc(x)}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
 }
 
-// ข้อความในป๊อปอัพของแต่ละจุดบนแผนที่
 function popupHtml(p, res) {
-  const seg = res.segById[p.id], c = res.chById[p.id], no = res.noById[p.id];
-  const odo = num(p.odo), soc = num(p.soc);
-  const rows = [`<b>${esc(stepName(p.event, no))}</b>`, fmtTime(p.ts)];
-  if (odo !== null) rows.push(`เลขไมล์ ${f(odo, 1)} km`);
-  if (soc !== null) rows.push(`แบต ${f(soc, 0)}%`);
-  if (seg) rows.push(`ช่วงก่อนหน้า ${f(seg.km, 1)} km · ${fmtDur(seg.minutes)}` + (seg.cons !== null ? ` · ${f(seg.cons, 1)} kWh/100km` : ''));
-  if (c) rows.push(`ชาร์จ ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'} · ${fmtDur(c.minutes)}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
-  return rows.join('<br>');
+  const d = detailLines(p, res);
+  return [`<b>${esc(d.title)}</b>`, esc(d.sub), ...d.extra.map(esc)].join('<br>');
 }
 
 // แผนที่ OpenStreetMap ผ่าน Leaflet (ไม่ต้องใช้ key) ถ้าโหลดไม่ได้จะใช้ SVG แทน
@@ -1236,6 +1446,7 @@ function showRoute(pts, res) {
   map.fitBounds(L.latLngBounds(ll).pad(0.25), { maxZoom: 16 });
 }
 
+// วาด SVG สำรองเมื่อแผนที่โหลดไม่ได้
 function routeSvg(pts) {
   const W = 600, H = 340, P = 36;
   const lats = pts.map(p => num(p.lat)), lngs = pts.map(p => num(p.lng));
@@ -1259,76 +1470,9 @@ function routeSvg(pts) {
     + `<path d="${path}" class="route-line"/>${dots}</svg>`;
 }
 
-function routeList(entries, res) {
-  return `<div class="rlist">` + entries.map((p, i) => {
-    const seg = res.segById[p.id], c = res.chById[p.id];
-    const no = res.noById[p.id];
-    const odo = num(p.odo);
-    const soc = num(p.soc);
-    const bits = [odo !== null ? `${f(odo, 1)} km` : null, soc !== null ? `แบต ${f(soc, 0)}%` : null, fmtTime(p.ts)];
-    const extra = [];
-    if (seg) extra.push(`ระยะ ${f(seg.km, 1)} km · ${fmtDur(seg.minutes)}` + (seg.cons !== null ? ` · ${f(seg.cons, 1)} kWh/100km` : ''));
-    if (c) extra.push(`ชาร์จ ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'} · ${fmtDur(c.minutes)}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
-    const col = EV_COLOR[p.event] || '#fff';
-    return `<div class="rrow">
-      <span class="rdot" style="background:${col}">${i + 1}</span>
-      <div style="min-width:0">
-        <div class="rt">${esc(stepName(p.event, no))}</div>
-        <div class="rs">${bits.filter(Boolean).join(' · ')}</div>
-        ${extra.map(x => `<div class="rx">${esc(x)}</div>`).join('')}
-      </div>
-    </div>`;
-  }).join('') + `</div>`;
-}
-
 $('routeSel').addEventListener('change', () => { if (lastRes) renderRoute(lastRes); });
 
-function legHtml(s) {
-  return `
-    <div class="li">
-      <div class="li-kind">🛣️ ขับรถ</div>
-      <div class="li-h"><b>${stepName(s.from.event, s.from.no)} → ${stepName(s.to.event, s.to.no)}</b><span>${fmtTime(s.from.ts)} – ${fmtTime(s.to.ts)}</span></div>
-      <div class="kv">
-        <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
-        <div><span>เวลา</span><b>${fmtDur(s.minutes)}</b></div>
-        <div><span>พลังงานที่ใช้</span><b>${s.kwh !== null ? f(s.kwh, 2) + ' kWh' : '–'}</b></div>
-        <div><span>อัตราใช้ไฟ</span><b>${f(s.cons, 1)} /100km</b></div>
-        <div><span>ค่าไฟต่อ km</span><b>${s.costPerKm === null ? '–' : f(s.costPerKm, 2) + ' ฿'}</b></div>
-      </div>
-    </div>`;
-}
-
-function chHtml(c) {
-  return `
-    <div class="li charge">
-      <div class="li-kind">🔌 ชาร์จ</div>
-      <div class="li-h"><b>ชาร์จจุดที่ ${c.no}</b><span>${fmtTime(c.startTs)} – ${fmtTime(c.ts)}</span></div>
-      <div class="kv">
-        <div><span>แบต</span><b>${f(c.socBefore, 0)} → ${f(c.socAfter, 0)}%</b></div>
-        <div><span>เวลาชาร์จ</span><b>${fmtDur(c.minutes)}</b></div>
-        <div><span>พลังงาน</span><b>${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}</b></div>
-        <div><span>ค่าชาร์จ</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>
-        <div><span>฿ / kWh</span><b>${c.cost !== null && c.kwh > 0 ? f(c.cost / c.kwh, 2) : '–'}</b></div>
-      </div>
-    </div>`;
-}
-
-function renderLegs(res) {
-  const t = res.t;
-  $('cKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
-  $('cCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>kWh/100km</small>`;
-  $('cCostKm').innerHTML = `${t.estCostPerKm === null ? '–' : f(t.estCostPerKm, 2)}<small>฿/km</small>`;
-  const items = [
-    ...res.segs.map(s => ({ ts: s.to.ts, html: legHtml(s) })),
-    ...res.ch.map(c => ({ ts: c.ts, html: chHtml(c) })),
-  ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
-  $('legCount').textContent = items.length ? `${items.length} รายการ` : '';
-  $('legs').innerHTML = items.length
-    ? items.map(i => i.html).join('')
-    : '<div class="empty">ยังไม่มีช่วงที่คิดค่าได้ ต้องมีบันทึกอย่างน้อย 2 รายการ และตั้งความจุแบตในตั้งค่ารถ</div>';
-}
-
-/* ---------- ลบรายการ (กดสองครั้งเพื่อยืนยัน ไม่ใช้ confirm) ---------- */
+/* ---------- ลบรายการ (กดสองครั้งเพื่อยืนยัน) ---------- */
 $('hist').addEventListener('click', async e => {
   const btn = e.target.closest('button.del');
   if (!btn || busy) return;
@@ -1346,22 +1490,29 @@ $('hist').addEventListener('click', async e => {
   finally { busy = false; }
 });
 
-/* ---------- หน้าแรก / การนำทาง (ใช้ #ev, #fuel) ---------- */
+/* ---------- หน้าแรกและการนำทาง (#ev, #fuel) ---------- */
 function route() {
   const h = location.hash.replace('#', '');
   const name = h === 'ev' || h === 'fuel' ? h : 'home';
   $('home').hidden = name !== 'home';
-  $('appEv').hidden = name !== 'ev';
-  $('fuelSoon').hidden = name !== 'fuel';
+  $('app').hidden = name === 'home';
+  if (name !== 'home') {
+    V = name;
+    document.body.dataset.v = V;
+    $('brandName').textContent = U().name;
+    document.title = U().name;
+    form.querySelector('input[name=event][value=start]').checked = true;
+    resetForm();
+    render();
+  }
   window.scrollTo({ top: 0 });
 }
 window.addEventListener('hashchange', route);
 document.querySelectorAll('[data-go-screen]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.goScreen; }));
 document.querySelectorAll('[data-home]').forEach(b => b.addEventListener('click', () => { location.hash = ''; }));
 
-/* ---------- init ---------- */
+/* ---------- เริ่มต้น ---------- */
 route();
-resetForm();
 load();
 </script>
 </body>

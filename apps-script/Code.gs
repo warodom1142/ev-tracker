@@ -6,7 +6,9 @@
  *   Execute as: Me · Who has access: Anyone
  */
 
-const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note', 'lat', 'lng'];
+// vehicle: 'ev' | 'fuel' (ข้อมูลเก่าไม่มีค่านี้ ถือเป็น 'ev')
+// liters, full: ใช้กับการเติมน้ำมัน (full = 1 เมื่อเติมเต็มถัง)
+const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note', 'lat', 'lng', 'vehicle', 'liters', 'full'];
 
 // ---------- HTTP ----------
 // GET  ?action=getData
@@ -65,11 +67,14 @@ function deleteEntry(id) {
   });
 }
 
+// รวมค่าใหม่เข้ากับค่าเดิม เพื่อให้บันทึกรถไฟฟ้าไม่ทับรถน้ำมัน และกลับกัน
 function saveSettings(settings) {
   return withLock_(() => {
     const s = settingsSheet_();
+    const cur = readSettings_();
+    Object.keys(settings).forEach(k => { cur[k] = settings[k]; });
     s.clearContents();
-    Object.keys(settings).forEach((k, i) => s.getRange(i + 1, 1, 1, 2).setValues([[k, settings[k]]]));
+    Object.keys(cur).forEach((k, i) => s.getRange(i + 1, 1, 1, 2).setValues([[k, cur[k]]]));
     return getData();
   });
 }

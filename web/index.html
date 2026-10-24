@@ -556,10 +556,10 @@ let lastTrips = [];
 let lastRes = null;
 
 /* ---------- GPS ----------
-   ทศนิยม 3 ตำแหน่ง ≈ 110 เมตร (ปัดให้หยาบเพื่อความเป็นส่วนตัว)
-   เปลี่ยนเป็น 5 ถ้าอยากได้พิกัดละเอียดขึ้น */
-const GPS_DECIMALS = 3;
-const roundGps = v => Math.round(v * 10 ** GPS_DECIMALS) / 10 ** GPS_DECIMALS;
+   ปัดพิกัดให้เป็นกริดขนาดประมาณ 30 เมตร (0.0003 องศา) เพื่อความเป็นส่วนตัว
+   ลดเป็น 0.00003 ถ้าอยากได้ประมาณ 3 เมตร */
+const GPS_GRID = 0.0003;
+const roundGps = v => Number((Math.round(v / GPS_GRID) * GPS_GRID).toFixed(6));
 function getPos() {
   return new Promise(resolve => {
     if (!navigator.geolocation) return resolve(null);

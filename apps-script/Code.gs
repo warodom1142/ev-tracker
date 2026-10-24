@@ -6,7 +6,7 @@
  *   Execute as: Me · Who has access: Anyone
  */
 
-const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note'];
+const ENTRY_HEADERS = ['id', 'ts', 'event', 'odo', 'soc', 'range', 'trip', 'mode', 'socAfter', 'kwh', 'cost', 'note', 'lat', 'lng'];
 
 // ---------- HTTP ----------
 // GET  ?action=getData
@@ -87,8 +87,11 @@ function entriesSheet_() {
   let s = ss_().getSheetByName('entries');
   if (!s) {
     s = ss_().insertSheet('entries');
-    s.appendRow(ENTRY_HEADERS);
     s.setFrozenRows(1);
+  }
+  // เพิ่มหัวคอลัมน์ใหม่ (lat, lng) ให้ชีทเดิมอัตโนมัติ
+  if (s.getLastRow() === 0 || s.getLastColumn() < ENTRY_HEADERS.length) {
+    s.getRange(1, 1, 1, ENTRY_HEADERS.length).setValues([ENTRY_HEADERS]);
   }
   return s;
 }

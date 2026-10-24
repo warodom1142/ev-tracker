@@ -30,40 +30,49 @@
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; max-width: 100%; overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; }
-  main, .col, .card, .side-form { min-width: 0; max-width: 100%; }
-  svg { max-width: 100%; }
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(900px 480px at 50% -180px, rgba(255,255,255,.07), transparent 70%),
-      var(--bg);
+    background: radial-gradient(900px 480px at 50% -180px, rgba(255,255,255,.07), transparent 70%), var(--bg);
     color: var(--text);
     font-family: var(--font); font-size: 15px; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  button, input, select { font: inherit; }
+  button, input { font: inherit; }
+  main, .col, .card, .side-form { min-width: 0; max-width: 100%; }
+  svg { max-width: 100%; }
 
   /* ---------- top bar ---------- */
   .top {
     position: sticky; top: 0; z-index: 5;
-    background: rgba(8, 9, 12, .72);
+    background: rgba(8, 9, 12, .78);
     backdrop-filter: saturate(160%) blur(16px);
     -webkit-backdrop-filter: saturate(160%) blur(16px);
     border-bottom: 1px solid var(--line);
     padding-top: env(safe-area-inset-top, 0px);
   }
   .top-in {
-    max-width: 1120px; margin: 0 auto; padding: 14px 18px;
+    max-width: 1120px; margin: 0 auto; padding: 14px 18px 10px;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
   }
-  .brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
-  .brand small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; min-width: 0; }
+  .brand small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .sync {
-    font-size: 12px; color: var(--muted); white-space: nowrap; font-family: var(--mono);
+    font-size: 11.5px; color: var(--muted); white-space: nowrap; font-family: var(--mono);
     background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px;
   }
   .sync.err { color: var(--text); border-color: var(--line-2); }
+  .pill-btn {
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--line-2);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; height: auto;
+  }
+  .tabs { max-width: 1120px; margin: 0 auto; padding: 0 18px 12px; display: flex; gap: 8px; }
+  .tabbtn {
+    background: transparent; color: var(--text-2); border: 1px solid var(--line-2);
+    border-radius: 999px; padding: 6px 14px; font-size: 13.5px; cursor: pointer; height: auto;
+  }
+  .tabbtn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
 
   /* ---------- layout ---------- */
   main {
@@ -71,56 +80,48 @@
     display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr);
   }
   @media (min-width: 920px) {
-    main { grid-template-columns: 384px minmax(0, 1fr); align-items: start; padding-top: 24px; gap: 20px; }
-    .side-form { position: sticky; top: 92px; }
+    main[data-tab="main"] { grid-template-columns: 384px minmax(0, 1fr); align-items: start; padding-top: 24px; gap: 20px; }
+    .side-form { position: sticky; top: 150px; }
   }
   .col { display: grid; gap: 16px; min-width: 0; }
 
   /* ---------- card ---------- */
   .card {
     background: linear-gradient(180deg, var(--surface-2), var(--surface));
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+    border: 1px solid var(--line); border-radius: var(--radius);
     box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .03);
-    min-width: 0; overflow: hidden;
+    overflow: hidden;
   }
-  .card-h {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 16px 18px 0;
-  }
+  .card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 0; }
   .card-h h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.005em; }
   .card-h span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
   .card-b { padding: 16px 18px 18px; }
 
   /* ---------- segmented ---------- */
   .seg {
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
+    display: flex; flex-wrap: wrap; gap: 4px;
     background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 4px;
     margin-bottom: 18px;
   }
   .seg label {
-    position: relative; text-align: center; padding: 9px 4px; border-radius: 12px;
-    font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; user-select: none;
-    transition: background .18s, color .18s;
+    position: relative; flex: 1 1 auto; text-align: center; padding: 9px 10px; border-radius: 12px;
+    font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; user-select: none;
+    transition: background .18s, color .18s; white-space: nowrap;
   }
   .seg label:hover { color: var(--text-2); }
   .seg input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
   .seg label:has(input:checked) { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .seg label:has(input:focus-visible) { box-shadow: 0 0 0 2px var(--text); }
 
-  .seg label { font-size: 13px; padding-left: 2px; padding-right: 2px; }
-
   /* ---------- fields ---------- */
   .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
   .grid > * { min-width: 0; }
   .span2 { grid-column: 1 / -1; }
   .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .lab {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
-    font-size: 12.5px; font-weight: 500; color: var(--muted);
-  }
+  .lab { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
   .lab em { font-style: normal; color: #565d6b; font-size: 12px; }
 
+  /* font-size 16px on inputs: iOS จะไม่ซูมตอนแตะช่อง */
   input {
     display: block; width: 100%; min-width: 0; max-width: 100%;
     height: 46px; padding: 0 14px;
@@ -132,21 +133,30 @@
   input::placeholder { color: #565d6b; }
   input:hover { background: #22262f; }
   input:focus { outline: none; border-color: var(--line-2); background: #23272f; box-shadow: 0 0 0 4px rgba(255,255,255,.06); }
-  input.num { font-family: var(--mono); font-size: 15px; }
-  input[type=datetime-local] { font-family: var(--mono); font-size: 15px; }
+  input.num { font-family: var(--mono); }
+  input[type=datetime-local] { font-family: var(--mono); }
 
-  /* ---------- button ---------- */
+  /* ---------- buttons ---------- */
   .btn {
     width: 100%; height: 50px; border: 0; border-radius: 14px;
     background: var(--accent); color: var(--accent-ink);
     font-weight: 600; font-size: 15px; cursor: pointer;
-    transition: transform .08s, opacity .15s, box-shadow .15s;
+    transition: transform .08s, opacity .15s;
     box-shadow: 0 10px 30px -12px rgba(255,255,255,.35);
   }
   .btn:hover { opacity: .92; }
   .btn:active { transform: scale(.985); }
   .btn:disabled { opacity: .4; cursor: default; box-shadow: none; }
   .btn:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+  .ghost-btn {
+    width: 100%; height: 50px; border-radius: 14px; cursor: pointer;
+    background: transparent; color: var(--text); border: 1px solid var(--line-2); font-weight: 500; font-size: 15px;
+  }
+  .del {
+    margin-top: 10px; background: none; border: 0; padding: 0; height: auto;
+    color: var(--muted); font-size: 12.5px; cursor: pointer;
+  }
+  .del:hover { color: var(--text); }
 
   details.more { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
   details.more summary { cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
@@ -158,19 +168,26 @@
   .form-msg { font-size: 13px; color: var(--muted); min-height: 20px; margin: 12px 0 0; text-align: center; }
   .form-msg.err { color: var(--text); }
 
-  /* ---------- car ---------- */
-  .car { display: grid; gap: 14px; }
-  .car input { height: 42px; }
+  /* ---------- car sheet (ป็อปอัพจากบนสุด) ---------- */
+  .sheet { position: fixed; inset: 0; z-index: 30; display: flex; justify-content: center; align-items: flex-start; }
+  .sheet-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, .6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .sheet-panel {
+    position: relative; width: 100%; max-width: 520px;
+    background: var(--surface); border: 1px solid var(--line-2); border-top: 0;
+    border-radius: 0 0 22px 22px; padding: calc(16px + env(safe-area-inset-top, 0px)) 18px 18px;
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .8);
+    animation: drop .22s ease;
+  }
+  @keyframes drop { from { transform: translateY(-100%); } to { transform: none; } }
+  .sheet-panel .car { display: grid; gap: 14px; }
+  .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 
   /* ---------- summary ---------- */
-  .hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0; padding: 18px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); padding: 18px; }
   .hero > div { min-width: 0; }
   .hero > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
   .hero .k { font-size: 12.5px; color: var(--muted); }
-  .hero .big {
-    font-family: var(--mono); font-weight: 500; font-size: 56px; line-height: 1; letter-spacing: -.035em;
-    margin-top: 10px; font-variant-numeric: tabular-nums;
-  }
+  .hero .big { font-family: var(--mono); font-weight: 500; font-size: 56px; line-height: 1; letter-spacing: -.035em; margin-top: 10px; font-variant-numeric: tabular-nums; }
   .hero .big small { font-family: var(--font); font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--muted); margin-left: 8px; }
   .hero .v { font-family: var(--mono); font-weight: 500; font-size: 30px; line-height: 1; margin-top: 10px; font-variant-numeric: tabular-nums; }
   .hero .v small { font-family: var(--font); font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 6px; }
@@ -192,7 +209,8 @@
   .bar { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0%; border-radius: 99px; background: var(--accent); transition: width .5s cubic-bezier(.2,.7,.2,1); }
   .bar-row.alt .bar i { background: #6b7281; }
-  .cmp-note { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .cmp-note, .time-line { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .time-line b { color: var(--text-2); font-weight: 500; font-family: var(--mono); }
 
   /* ---------- chart ---------- */
   .chart-wrap { padding: 10px 12px 8px; }
@@ -203,7 +221,7 @@
   .chart .dot { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
   .chart .area { fill: url(#fade); }
 
-  /* ---------- rows (modes / history) ---------- */
+  /* ---------- rows ---------- */
   .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 18px; border-top: 1px solid var(--line); }
   .row:first-child { border-top: 0; }
   .row .t { font-weight: 500; font-size: 14.5px; }
@@ -225,17 +243,7 @@
   .tag.dc { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
   .hist-line { font-size: 13px; color: var(--text-2); font-family: var(--mono); margin-top: 5px; overflow-wrap: anywhere; }
   .hist-note { font-size: 12.5px; color: var(--muted); margin-top: 3px; overflow-wrap: anywhere; }
-  .flag {
-    display: inline-block; margin-top: 7px; font-size: 12px; color: var(--text);
-    background: rgba(255,255,255,.08); border-radius: 8px; padding: 2px 8px;
-  }
-  .del {
-    margin-top: 10px; background: none; border: 0; padding: 0; height: auto;
-    color: var(--muted); font-size: 12.5px; cursor: pointer;
-  }
-  .del:hover { color: var(--text); }
-
-  .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
+  .flag { display: inline-block; margin-top: 7px; font-size: 12px; color: var(--text); background: rgba(255,255,255,.08); border-radius: 8px; padding: 2px 8px; }
 
   /* ---------- trips ---------- */
   .trip { padding: 16px 18px; border-top: 1px solid var(--line); }
@@ -243,19 +251,31 @@
   .trip-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
   .trip-h b { display: block; font-weight: 600; font-size: 15px; }
   .trip-h span { font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
-  .trip-k { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .trip-k > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
-  .trip-k > div:first-child { grid-column: 1 / -1; }
-  .trip-k span { display: block; font-size: 11.5px; color: var(--muted); }
-  .trip-k b { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; margin-top: 2px; overflow-wrap: anywhere; }
 
-  /* ---------- toast + notice ---------- */
+  /* ---------- k/v tiles (ใช้ร่วมกัน) ---------- */
+  .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kv > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .kv > div:first-child { grid-column: 1 / -1; }
+  .kv span { display: block; font-size: 11.5px; color: var(--muted); }
+  .kv b { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; margin-top: 2px; overflow-wrap: anywhere; }
+
+  /* ---------- legs (คิดค่า) ---------- */
+  .li { padding: 16px 18px; border-top: 1px solid var(--line); }
+  .li:first-child { border-top: 0; }
+  .li-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .li-h b { font-weight: 600; font-size: 14.5px; }
+  .li-h span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .li.charge { background: rgba(255,255,255,.025); }
+
+  .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* ---------- toast ---------- */
   .toast {
     position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%) translateY(14px);
     background: var(--text); color: var(--accent-ink); font-weight: 500; font-size: 14px;
     padding: 11px 18px; border-radius: 999px;
-    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 20;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 40;
     max-width: calc(100% - 32px); box-shadow: 0 16px 40px -12px rgba(0,0,0,.6);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -264,7 +284,7 @@
   .notice { max-width: 1120px; margin: 16px auto 0; padding: 0 16px; }
   .notice div { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; }
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
@@ -272,13 +292,21 @@
 <header class="top">
   <div class="top-in">
     <div class="brand">EV Tracker<small id="carName">รถของฉัน</small></div>
-    <div id="sync" class="sync">กำลังเชื่อมต่อ…</div>
+    <div class="top-r">
+      <span id="sync" class="sync">กำลังเชื่อมต่อ…</span>
+      <button id="carBtn" class="pill-btn" type="button">ตั้งค่ารถ</button>
+    </div>
   </div>
+  <nav class="tabs">
+    <button class="tabbtn on" data-go="main" type="button">หน้าหลัก</button>
+    <button class="tabbtn" data-go="calc" type="button">คิดค่า</button>
+  </nav>
 </header>
 
 <div id="configNotice" class="notice" hidden><div>ยังไม่ได้ตั้งค่าลิงก์ Apps Script ให้แก้บรรทัด <b>API_URL</b> ในไฟล์นี้ก่อน</div></div>
 
-<main>
+<!-- ============ หน้าหลัก ============ -->
+<main data-tab="main">
   <aside class="side-form col">
     <section class="card">
       <div class="card-h"><h2>บันทึกใหม่</h2><span id="clockHint"></span></div>
@@ -287,7 +315,8 @@
           <div class="seg" role="radiogroup" aria-label="ประเภทการบันทึก">
             <label><input type="radio" name="event" value="start" checked>เริ่มต้น</label>
             <label><input type="radio" name="event" value="drive">ระหว่างทาง</label>
-            <label><input type="radio" name="event" value="charge">ชาร์จ DC</label>
+            <label><input type="radio" name="event" value="chargeStart">ถึงจุดชาร์จ</label>
+            <label><input type="radio" name="event" value="chargeEnd">ชาร์จเสร็จ</label>
             <label><input type="radio" name="event" value="end">สิ้นสุด</label>
           </div>
 
@@ -296,7 +325,7 @@
               <span class="lab">เวลา</span>
               <input id="time" type="datetime-local" required>
             </label>
-            <label class="field">
+            <label class="field" id="wrapOdo">
               <span class="lab">เลขไมล์ <em>km</em></span>
               <input id="odo" class="num" type="number" step="0.1" min="0" inputmode="decimal" required>
             </label>
@@ -304,11 +333,11 @@
               <span class="lab"><span id="socLabel">แบต</span> <em>%</em></span>
               <input id="soc" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal" required>
             </label>
-            <label class="field">
+            <label class="field" id="wrapRange">
               <span class="lab">ระยะบนจอ <em>km</em></span>
               <input id="range" class="num" type="number" step="0.1" min="0" inputmode="decimal">
             </label>
-            <label class="field">
+            <label class="field" id="wrapMode">
               <span class="lab">โหมดขับ</span>
               <input id="mode" list="modes" placeholder="Eco">
             </label>
@@ -317,14 +346,10 @@
 
           <div id="chargeFields" class="grid" style="margin-top:14px" hidden>
             <label class="field">
-              <span class="lab">แบตหลังชาร์จ <em>%</em></span>
-              <input id="socAfter" class="num" type="number" step="0.1" min="0" max="100" inputmode="decimal">
-            </label>
-            <label class="field">
               <span class="lab">kWh จากตู้ <em>ถ้ามี</em></span>
               <input id="kwh" class="num" type="number" step="0.01" min="0" inputmode="decimal">
             </label>
-            <label class="field span2">
+            <label class="field">
               <span class="lab">ค่าชาร์จ ฿ <em>ถ้ามี</em></span>
               <input id="cost" class="num" type="number" step="0.01" min="0" inputmode="decimal">
             </label>
@@ -347,17 +372,6 @@
           <div style="margin-top:18px"><button id="submitBtn" class="btn" type="submit">บันทึก</button></div>
           <p id="formMsg" class="form-msg"></p>
         </form>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-h"><h2>รถ</h2><span>ตั้งครั้งเดียว</span></div>
-      <div class="card-b car">
-        <label class="field"><span class="lab">รุ่น</span><input id="model" placeholder="Tesla Model 3"></label>
-        <div class="grid">
-          <label class="field"><span class="lab">ความจุ <em>kWh</em></span><input id="capacity" class="num" type="number" step="0.1" min="0" inputmode="decimal"></label>
-          <label class="field"><span class="lab">ราคา DC <em>฿/kWh</em></span><input id="dcPrice" class="num" type="number" step="0.01" min="0" inputmode="decimal"></label>
-        </div>
       </div>
     </section>
   </aside>
@@ -393,6 +407,7 @@
           <div class="bar"><i id="barActual"></i></div>
         </div>
         <p class="cmp-note" id="gapNote"></p>
+        <p class="time-line" id="timeLine"></p>
       </div>
     </section>
 
@@ -412,7 +427,7 @@
 
     <section class="card">
       <div class="card-h"><h2>ทริป</h2><span id="tripCount"></span></div>
-      <div style="padding:10px 18px 0"><button id="copyTrips" class="del" style="margin-top:0">คัดลอกสรุปทริป</button></div>
+      <div style="padding:10px 18px 0"><button id="copyTrips" class="del" style="margin-top:0" type="button">คัดลอกสรุปทริป</button></div>
       <div id="trips" style="padding-top:8px"></div>
     </section>
 
@@ -428,6 +443,40 @@
   </div>
 </main>
 
+<!-- ============ คิดค่า ============ -->
+<main data-tab="calc" hidden>
+  <div class="col" style="grid-column:1/-1">
+    <section class="card">
+      <div class="card-h"><h2>คิดค่าแต่ละช่วง</h2><span id="legCount"></span></div>
+      <div class="stats" style="padding-top:16px">
+        <div class="stat"><div class="k">ระยะรวม</div><div class="v" id="cKm">–</div></div>
+        <div class="stat"><div class="k">kWh / 100 km</div><div class="v" id="cCons">–</div></div>
+        <div class="stat"><div class="k">฿ / km</div><div class="v" id="cCostKm">–</div></div>
+      </div>
+      <div id="legs" style="padding-top:8px"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ============ ป็อปอัพตั้งค่ารถ ============ -->
+<div id="carSheet" class="sheet" hidden>
+  <div class="sheet-bg" id="carBg"></div>
+  <div class="sheet-panel" role="dialog" aria-label="ตั้งค่ารถ">
+    <div class="card-h" style="padding:0 0 14px"><h2>ตั้งค่ารถ</h2><span>ตั้งครั้งเดียว</span></div>
+    <div class="car">
+      <label class="field"><span class="lab">รุ่น</span><input id="model" placeholder="Tesla Model 3"></label>
+      <div class="grid">
+        <label class="field"><span class="lab">ความจุ <em>kWh</em></span><input id="capacity" class="num" type="number" step="0.1" min="0" inputmode="decimal"></label>
+        <label class="field"><span class="lab">ราคา DC <em>฿/kWh</em></span><input id="dcPrice" class="num" type="number" step="0.01" min="0" inputmode="decimal"></label>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button id="carCancel" class="ghost-btn" type="button">ยกเลิก</button>
+      <button id="carSave" class="btn" type="button">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -438,16 +487,23 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyNs5F_4gKsvEwIagsyD69a
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
-const E = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', charge: 'ชาร์จ DC', end: 'สิ้นสุดทริป' };
+const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ (เก่า)' };
 const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
 const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
 const sum = a => a.reduce((x, y) => x + y, 0);
 const avg = a => (a.length ? sum(a) / a.length : null);
 const fmtDate = ts => new Date(ts).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtTime = ts => new Date(ts).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+const fmtDur = min => {
+  if (min === null || min === undefined || !isFinite(min)) return '–';
+  const m = Math.round(min);
+  if (m < 60) return m + ' นาที';
+  return `${Math.floor(m / 60)} ชม. ${m % 60} นาที`;
+};
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const nowLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 
 let D = { entries: [], settings: {} };
-let saveTimer = null;
 let busy = false;
 let lastTrips = [];
 
@@ -488,7 +544,7 @@ function toast(text, isErr) {
 function applyData(d) {
   D = d;
   render();
-  setSync('ซิงก์ ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
+  setSync('ซิงก์ ' + fmtTime(new Date()));
 }
 
 async function load() {
@@ -508,7 +564,7 @@ function finishTrip(b, endTs, ended) {
   const ekwh = sum(valid.map(s => s.kwh));
   const charged = b.charges.filter(c => c.kwh !== null);
   const costs = b.charges.filter(c => c.cost !== null);
-  const minutes = b.startTs && endTs ? Math.round((new Date(endTs) - new Date(b.startTs)) / 60000) : null;
+  const minutes = b.startTs && endTs ? (new Date(endTs) - new Date(b.startTs)) / 60000 : null;
   return {
     ended, startTs: b.startTs, endTs, minutes,
     km, kwh: ekwh, cons: ekm > 0 ? (ekwh / ekm) * 100 : null,
@@ -522,18 +578,37 @@ function analyze(entries, st) {
   const cap = num(st.capacity) || 0;
   const price = num(st.dcPrice);
   const sorted = entries
-    .filter(e => num(e.odo) !== null && num(e.soc) !== null)
-    .sort((a, b) => new Date(a.ts) - new Date(b.ts) || a.odo - b.odo);
+    .filter(e => num(e.soc) !== null && (e.event === 'chargeEnd' || num(e.odo) !== null))
+    .sort((a, b) => new Date(a.ts) - new Date(b.ts) || (num(a.odo) || 0) - (num(b.odo) || 0));
 
   const segs = [], ch = [], warn = {}, trips = [];
-  let bucket = newBucket();
   const w = (id, m) => (warn[id] = warn[id] || []).push(m);
-  let state = null;
+  let state = null, pending = null, bucket = newBucket();
+
+  const addCharge = (id, start, endTs, socAfter, e) => {
+    const socBefore = start.soc;
+    const gained = cap > 0 && socAfter !== null && socBefore !== null ? ((socAfter - socBefore) / 100) * cap : null;
+    if (socAfter !== null && socBefore !== null && socAfter <= socBefore) w(id, 'แบตหลังชาร์จไม่เพิ่ม');
+    const kin = num(e.kwh);
+    const kwh = kin !== null ? kin : gained;
+    const cin = num(e.cost);
+    const cost = cin !== null ? cin : (kwh !== null && price !== null ? kwh * price : null);
+    ch.push({
+      id, startTs: start.ts, ts: endTs,
+      minutes: (new Date(endTs) - new Date(start.ts)) / 60000,
+      socBefore, socAfter, kwh, kwhManual: kin !== null, gained, cost,
+    });
+  };
 
   for (const e of sorted) {
     const segMark = segs.length, chMark = ch.length;
     if (!bucket.startTs) bucket.startTs = e.ts;
-    const odo = num(e.odo), soc = num(e.soc);
+    const soc = num(e.soc);
+    let odo = num(e.odo);
+    if (e.event === 'chargeEnd') odo = pending ? pending.odo : (state ? state.odo : null);
+    if (odo === null) continue;
+
+    // 1) ช่วงขับรถตั้งแต่บันทึกก่อนหน้า
     if (state) {
       const km = odo - state.odo, drop = state.soc - soc;
       if (km < 0) w(e.id, 'ไมล์ลดลง');
@@ -542,25 +617,37 @@ function analyze(entries, st) {
         const valid = drop >= 0 && cap > 0;
         const kwh = cap > 0 ? (drop / 100) * cap : null;
         segs.push({
-          id: e.id, ts: e.ts, km, kwh, mode: e.mode || '', valid,
+          id: e.id,
+          from: { ts: state.ts, odo: state.odo, soc: state.soc, event: state.event },
+          to: { ts: e.ts, odo, soc, event: e.event },
+          km, minutes: (new Date(e.ts) - new Date(state.ts)) / 60000,
+          kwh, valid, mode: e.mode || '',
           cons: valid ? (kwh / km) * 100 : null,
           actualFull: drop > 0 ? (km / drop) * 100 : null,
           screenFull: state.range != null && state.soc > 0 ? (state.range / state.soc) * 100 : null,
         });
       }
     }
-    if (e.event === 'charge') {
-      const sa = num(e.socAfter), kin = num(e.kwh);
-      const gained = cap > 0 && sa !== null ? ((sa - soc) / 100) * cap : null;
-      if (sa !== null && sa <= soc) w(e.id, 'แบตหลังชาร์จไม่เพิ่ม');
-      const kwh = kin !== null ? kin : gained;
-      const cin = num(e.cost);
-      const cost = cin !== null ? cin : (kwh !== null && price !== null ? kwh * price : null);
-      ch.push({ id: e.id, kwh, manual: kin !== null, gained, cost });
-      state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts };
+
+    // 2) ประเภทของบันทึก
+    if (e.event === 'chargeStart') {
+      pending = { id: e.id, ts: e.ts, odo, soc };
+      state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event };
+    } else if (e.event === 'chargeEnd') {
+      const start = pending || (state ? { ts: state.ts, soc: state.soc } : { ts: e.ts, soc: null });
+      addCharge(e.id, start, e.ts, soc, e);
+      pending = null;
+      state = { odo, soc, range: null, ts: e.ts, event: e.event };
+    } else if (e.event === 'charge') {
+      // ข้อมูลเก่า: ชาร์จเป็นบันทึกเดียว
+      const sa = num(e.socAfter);
+      addCharge(e.id, { ts: e.ts, soc }, e.ts, sa, e);
+      state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts, event: e.event };
     } else {
-      state = { odo, soc, range: num(e.range), ts: e.ts };
+      state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event };
     }
+
+    // 3) แบ่งทริปตามบันทึก "สิ้นสุด"
     bucket.segs.push(...segs.slice(segMark));
     bucket.charges.push(...ch.slice(chMark));
     if (e.event === 'end') {
@@ -572,21 +659,28 @@ function analyze(entries, st) {
     trips.push(finishTrip(bucket, null, false));
   }
 
+  // ---------- สรุปผล ----------
   const totalKm = sum(segs.map(s => s.km));
+  const driveMin = sum(segs.map(s => s.minutes));
   const eSegs = segs.filter(s => s.valid);
   const ekm = sum(eSegs.map(s => s.km));
   const ekwh = sum(eSegs.map(s => s.kwh));
   const withCost = ch.filter(c => c.cost !== null);
   const totalCost = sum(withCost.map(c => c.cost));
   const chKwh = sum(ch.filter(c => c.kwh !== null).map(c => c.kwh));
+  const chMin = sum(ch.map(c => c.minutes));
   const priced = ch.filter(c => c.cost !== null && c.kwh > 0);
   const avgPrice = priced.length ? sum(priced.map(c => c.cost)) / sum(priced.map(c => c.kwh)) : null;
   const avgCons = ekm > 0 ? (ekwh / ekm) * 100 : null;
-  const manual = ch.filter(c => c.manual && c.gained !== null && c.kwh > 0);
+  const manual = ch.filter(c => c.kwhManual && c.gained !== null && c.kwh > 0);
   const eff = manual.length ? sum(manual.map(c => c.gained)) / sum(manual.map(c => c.kwh)) : null;
   const cmp = segs.filter(s => s.screenFull !== null && s.actualFull !== null);
   const screenAvg = avg(cmp.map(s => s.screenFull));
   const actualAvg = avg(cmp.map(s => s.actualFull));
+
+  // ค่าไฟต่อ km ของแต่ละช่วง: ใช้ราคา DC ที่ตั้งไว้ ถ้าไม่มีใช้ราคาเฉลี่ยจากการชาร์จจริง
+  const legPrice = price !== null ? price : avgPrice;
+  segs.forEach(s => { s.costPerKm = s.cons !== null && legPrice !== null ? (s.cons / 100) * legPrice : null; });
 
   const modeMap = {};
   for (const s of eSegs) {
@@ -603,12 +697,12 @@ function analyze(entries, st) {
   ch.forEach(c => chById[c.id] = c);
 
   return {
-    segs, warn, segById, chById, byMode, trips,
+    segs, ch, warn, segById, chById, byMode, trips,
     t: {
-      totalKm, energyKwh: ekwh, avgCons, chKwh, totalCost,
+      totalKm, driveMin, chMin, energyKwh: ekwh, avgCons, chKwh, totalCost,
       missing: ch.length - withCost.length, avgPrice,
       costPerKm: totalKm > 0 && withCost.length ? totalCost / totalKm : null,
-      estCostPerKm: avgCons !== null && avgPrice !== null ? (avgCons / 100) * avgPrice : null,
+      estCostPerKm: avgCons !== null && legPrice !== null ? (avgCons / 100) * legPrice : null,
       eff, screenAvg, actualAvg,
       gapPct: screenAvg && actualAvg ? ((screenAvg - actualAvg) / actualAvg) * 100 : null,
     },
@@ -620,23 +714,27 @@ const form = $('form');
 const eventType = () => form.querySelector('input[name=event]:checked').value;
 
 function updateEventUI() {
-  const isCharge = eventType() === 'charge';
-  $('chargeFields').hidden = !isCharge;
-  $('socLabel').textContent = isCharge ? 'แบตก่อนชาร์จ' : 'แบต';
-  $('socAfter').required = isCharge;
+  const t = eventType();
+  const isEnd = t === 'chargeEnd';
+  $('wrapOdo').hidden = isEnd;
+  $('odo').required = !isEnd;
+  $('wrapRange').hidden = isEnd;
+  $('wrapMode').hidden = isEnd;
+  $('chargeFields').hidden = !isEnd;
+  $('socLabel').textContent = t === 'chargeStart' ? 'แบตก่อนชาร์จ' : isEnd ? 'แบตหลังชาร์จ' : 'แบต';
 }
 form.querySelectorAll('input[name=event]').forEach(r => r.addEventListener('change', updateEventUI));
 
-function nowLocal() {
-  const d = new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16);
-}
-
 function resetForm() {
-  ['odo', 'soc', 'range', 'trip', 'socAfter', 'kwh', 'cost', 'note'].forEach(id => ($(id).value = ''));
+  ['odo', 'soc', 'range', 'trip', 'kwh', 'cost', 'note'].forEach(id => ($(id).value = ''));
   $('time').value = nowLocal();
   updateEventUI();
+  refreshPlaceholders();
+}
+
+function refreshPlaceholders() {
+  const withOdo = [...D.entries].filter(e => num(e.odo) !== null).sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
+  if (withOdo) $('odo').placeholder = 'ล่าสุด ' + f(num(withOdo.odo), 1);
 }
 
 form.addEventListener('submit', async e => {
@@ -647,24 +745,23 @@ form.addEventListener('submit', async e => {
   const msg = (t, isErr) => { $('formMsg').textContent = t; $('formMsg').classList.toggle('err', !!isErr); };
 
   const ts = new Date(v('time'));
-  const soc = num(v('soc'));
-  const odo = num(v('odo'));
   if (isNaN(ts)) return msg('กรุณาใส่เวลา', true);
-  if (odo === null) return msg('กรุณาใส่เลขไมล์', true);
+  const soc = num(v('soc'));
   if (soc === null || soc < 0 || soc > 100) return msg('แบตต้องอยู่ระหว่าง 0 ถึง 100', true);
 
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    ts: ts.toISOString(), event: type, odo, soc,
-    range: v('range') === '' ? '' : num(v('range')),
-    trip: v('trip') === '' ? '' : num(v('trip')),
-    mode: v('mode'), note: v('note'),
-    socAfter: '', kwh: '', cost: '',
+    ts: ts.toISOString(), event: type, odo: null, soc,
+    range: '', trip: v('trip') === '' ? '' : num(v('trip')),
+    mode: '', note: v('note'), socAfter: '', kwh: '', cost: '',
   };
-  if (type === 'charge') {
-    const sa = num(v('socAfter'));
-    if (sa === null || sa <= soc || sa > 100) return msg('แบตหลังชาร์จต้องมากกว่าก่อนชาร์จและไม่เกิน 100', true);
-    entry.socAfter = sa;
+  if (type !== 'chargeEnd') {
+    const odo = num(v('odo'));
+    if (odo === null) return msg('กรุณาใส่เลขไมล์', true);
+    entry.odo = odo;
+    entry.range = v('range') === '' ? '' : num(v('range'));
+    entry.mode = v('mode');
+  } else {
     entry.kwh = v('kwh') === '' ? '' : num(v('kwh'));
     entry.cost = v('cost') === '' ? '' : num(v('cost'));
   }
@@ -676,7 +773,7 @@ form.addEventListener('submit', async e => {
     applyData(await apiPost({ action: 'addEntry', entry }));
     resetForm();
     msg('');
-    toast('บันทึกแล้ว');
+    toast('บันทึกแล้ว · ' + LABEL[type]);
   } catch (err) {
     msg('บันทึกไม่สำเร็จ: ' + err.message, true);
     toast('บันทึกไม่สำเร็จ', true);
@@ -686,17 +783,44 @@ form.addEventListener('submit', async e => {
   }
 });
 
-/* ---------- car settings (autosave) ---------- */
-['model', 'capacity', 'dcPrice'].forEach(id => $(id).addEventListener('input', () => {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    try {
-      applyData(await apiPost({
-        action: 'saveSettings',
-        settings: { model: $('model').value, capacity: $('capacity').value, dcPrice: $('dcPrice').value },
-      }));
-    } catch (err) { toast('บันทึกการตั้งค่าไม่สำเร็จ', true); }
-  }, 700);
+/* ---------- ป็อปอัพตั้งค่ารถ ---------- */
+function openCar() {
+  const s = D.settings || {};
+  $('model').value = s.model || '';
+  $('capacity').value = s.capacity || '';
+  $('dcPrice').value = s.dcPrice || '';
+  $('carSheet').hidden = false;
+}
+function closeCar() { $('carSheet').hidden = true; }
+
+$('carBtn').addEventListener('click', openCar);
+$('carCancel').addEventListener('click', closeCar);
+$('carBg').addEventListener('click', closeCar);
+$('carSave').addEventListener('click', async () => {
+  if (busy) return;
+  busy = true;
+  $('carSave').disabled = true;
+  try {
+    applyData(await apiPost({
+      action: 'saveSettings',
+      settings: { model: $('model').value.trim(), capacity: $('capacity').value, dcPrice: $('dcPrice').value },
+    }));
+    closeCar();
+    toast('บันทึกการตั้งค่าแล้ว');
+  } catch (err) {
+    toast('บันทึกการตั้งค่าไม่สำเร็จ', true);
+  } finally {
+    busy = false;
+    $('carSave').disabled = false;
+  }
+});
+
+/* ---------- แท็บ ---------- */
+document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click', () => {
+  const go = btn.dataset.go;
+  document.querySelectorAll('.tabbtn').forEach(b => b.classList.toggle('on', b === btn));
+  document.querySelectorAll('main[data-tab]').forEach(m => { m.hidden = m.dataset.tab !== go; });
+  window.scrollTo({ top: 0 });
 }));
 
 /* ---------- render ---------- */
@@ -706,24 +830,21 @@ function setStat(id, value, unit) {
 
 function render() {
   const s = D.settings || {};
-  ['model', 'capacity', 'dcPrice'].forEach(id => {
-    if (document.activeElement !== $(id)) $(id).value = s[id] || '';
-  });
   $('carName').textContent = s.model ? s.model : 'รถของฉัน';
   if (!$('time').value) resetForm();
+  refreshPlaceholders();
 
   const res = analyze(D.entries, s);
   const t = res.t;
   const sorted = [...D.entries].sort((a, b) => new Date(b.ts) - new Date(a.ts));
   const last = sorted[0];
+  const lastOdo = last ? num(last.odo) : null;
 
-  $('last').textContent = last ? `${fmtDate(last.ts)} · ${f(last.odo, 1)} km` : '';
+  $('last').textContent = last ? fmtDate(last.ts) + (lastOdo !== null ? ' · ' + f(lastOdo, 1) + ' km' : '') : '';
   $('count').textContent = sorted.length ? `${sorted.length} รายการ` : '';
-  if (last) $('odo').placeholder = 'ล่าสุด ' + f(last.odo, 1);
 
   $('bigCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>kWh/100km</small>`;
   $('bigKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
-
   setStat('sEnergy', f(t.energyKwh, 1), 'kWh');
   setStat('sCharged', f(t.chKwh, 1), 'kWh');
   setStat('sCost', f(t.totalCost, 0), '฿');
@@ -740,11 +861,13 @@ function render() {
     ? 'ต้องมีช่วงที่มีทั้งระยะบนจอและแบต% เพื่อเทียบ'
     : (t.gapPct >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(t.gapPct), 1) + '%'
       + (t.missing ? ` · ไม่มีค่าชาร์จ ${t.missing} ครั้ง` : '');
+  $('timeLine').innerHTML = `เวลาขับรวม <b>${fmtDur(t.driveMin)}</b> · เวลาชาร์จรวม <b>${fmtDur(t.chMin)}</b>`;
 
   renderChart(res.segs.filter(s => s.cons !== null));
+  renderTrips(res.trips);
   renderModes(res.byMode);
   renderHistory(sorted, res);
-  renderTrips(res.trips);
+  renderLegs(res);
 }
 
 function renderChart(pts) {
@@ -771,23 +894,8 @@ function renderChart(pts) {
     <path class="area" d="${area}"/>
     <path class="trace" d="${path}"/>
     ${pts.map((p, i) => `<circle class="dot" cx="${x(i)}" cy="${y(p.cons)}" r="3.5"/>`).join('')}
-    <text class="axis-t" x="${padL}" y="${H - 6}">${fmtDate(pts[0].ts)}</text>
-    <text class="axis-t" x="${W - padR}" y="${H - 6}" text-anchor="end">${fmtDate(pts[pts.length - 1].ts)}</text>`;
-}
-
-function renderModes(rows) {
-  $('modes').innerHTML = rows.length
-    ? rows.map(m => `
-      <div class="row">
-        <div class="t">${esc(m.mode)}</div>
-        <div class="m">${f(m.cons, 1)}<span style="font-family:var(--font);font-size:12px;color:var(--muted)"> kWh/100km</span></div>
-        <div class="s">${f(m.km, 1)} km · ${f(m.kwh, 2)} kWh</div>
-      </div>`).join('')
-    : '<div class="empty">ยังไม่มีข้อมูลตามโหมด</div>';
-}
-
-function tripDur(tr) {
-  return tr.minutes !== null ? `${Math.floor(tr.minutes / 60)} ชม. ${tr.minutes % 60} นาที` : '';
+    <text class="axis-t" x="${padL}" y="${H - 6}">${fmtDate(pts[0].to.ts)}</text>
+    <text class="axis-t" x="${W - padR}" y="${H - 6}" text-anchor="end">${fmtDate(pts[pts.length - 1].to.ts)}</text>`;
 }
 
 function renderTrips(trips) {
@@ -797,14 +905,13 @@ function renderTrips(trips) {
   $('trips').innerHTML = list.length
     ? list.map((tr, i) => {
         const n = list.length - i;
-        const dur = tripDur(tr);
         return `
       <div class="trip">
         <div class="trip-h">
-          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'}${dur ? ' · ' + dur : ''}</span></div>
+          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'}${tr.minutes !== null ? ' · ' + fmtDur(tr.minutes) : ''}</span></div>
           <span class="tag ${tr.ended ? 'dc' : ''}">${tr.ended ? 'สิ้นสุด' : 'ยังไม่จบ'}</span>
         </div>
-        <div class="trip-k">
+        <div class="kv">
           <div><span>ระยะทาง</span><b>${f(tr.km, 1)} km</b></div>
           <div><span>อัตราใช้ไฟ</span><b>${f(tr.cons, 1)} /100km</b></div>
           <div><span>พลังงานที่ใช้</span><b>${f(tr.kwh, 1)} kWh</b></div>
@@ -813,7 +920,7 @@ function renderTrips(trips) {
         </div>
       </div>`;
       }).join('')
-    : '<div class="empty">ยังไม่มีทริป กดบันทึก “สิ้นสุด” เมื่อถึงที่หมาย</div>';
+    : '<div class="empty">ยังไม่มีทริป กดบันทึก “สิ้นสุดทริป” เมื่อถึงที่หมาย</div>';
 }
 
 function tripSummaryText(trips) {
@@ -821,8 +928,8 @@ function tripSummaryText(trips) {
   return list.map((tr, i) => {
     const n = list.length - i;
     const when = tr.startTs ? fmtDate(tr.startTs) : '';
-    const dur = tripDur(tr);
-    const head = `ทริป ${n} · ${when}${dur ? ' · ' + dur : ''}${tr.ended ? '' : ' · ยังไม่จบ'}`;
+    const dur = tr.minutes !== null ? ' (' + fmtDur(tr.minutes) + ')' : '';
+    const head = `ทริป ${n} · ${when}${dur}${tr.ended ? '' : ' · ยังไม่จบ'}`;
     return [
       head,
       `ระยะทาง ${f(tr.km, 1)} km · ใช้ไฟ ${f(tr.cons, 1)} kWh/100km · พลังงาน ${f(tr.kwh, 2)} kWh`,
@@ -842,40 +949,94 @@ document.addEventListener('click', async e => {
   }
 });
 
+function renderModes(rows) {
+  $('modes').innerHTML = rows.length
+    ? rows.map(m => `
+      <div class="row">
+        <div class="t">${esc(m.mode)}</div>
+        <div class="m">${f(m.cons, 1)}<span style="font-family:var(--font);font-size:12px;color:var(--muted)"> kWh/100km</span></div>
+        <div class="s">${f(m.km, 1)} km · ${f(m.kwh, 2)} kWh</div>
+      </div>`).join('')
+    : '<div class="empty">ยังไม่มีข้อมูลตามโหมด</div>';
+}
+
 function renderHistory(sorted, res) {
   if (!sorted.length) { $('hist').innerHTML = '<div class="empty">ยังไม่มีบันทึก เริ่มจากกรอก “เริ่มต้น”</div>'; return; }
   $('hist').innerHTML = sorted.map(e => {
     const seg = res.segById[e.id], c = res.chById[e.id];
-    const socTxt = e.event === 'charge' && e.socAfter !== null ? `${f(e.soc, 0)} → ${f(e.socAfter, 0)}%` : `${f(e.soc, 0)}%`;
-    const parts = [];
-    if (seg) parts.push(`วิ่ง ${f(seg.km, 1)} km` + (seg.kwh !== null ? ` · ${f(seg.kwh, 2)} kWh` : '') + (seg.cons !== null ? ` · ${f(seg.cons, 1)}/100` : ''));
-    if (seg && seg.screenFull !== null && seg.actualFull !== null) parts.push(`เต็มแบต จอ ${f(seg.screenFull, 0)} / จริง ${f(seg.actualFull, 0)} km`);
-    if (c) parts.push(`ชาร์จ ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
+    const odo = num(e.odo);
+    const socTxt = e.event === 'chargeEnd' ? `→ ${f(e.soc, 0)}%` : `${f(e.soc, 0)}%`;
+    const lines = [];
+    if (seg) lines.push(`${LABEL[seg.from.event]} → ${fmtTime(seg.from.ts)} · ${fmtDur(seg.minutes)} · ${f(seg.km, 1)} km` + (seg.cons !== null ? ` · ${f(seg.cons, 1)}/100km` : ''));
+    if (c) lines.push(`ชาร์จ ${fmtDur(c.minutes)} · ${f(c.socBefore, 0)}→${f(c.socAfter, 0)}% · ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
     const notes = [];
-    if (e.range !== null) notes.push(`จอ ${f(e.range, 1)} km`);
-    if (e.trip !== null) notes.push(`trip ${f(e.trip, 1)} km`);
+    if (e.range !== null && e.range !== '') notes.push(`จอ ${f(num(e.range), 1)} km`);
+    if (e.trip !== null && e.trip !== '') notes.push(`trip ${f(num(e.trip), 1)} km`);
     if (e.mode) notes.push(e.mode);
     if (e.note) notes.push(e.note);
     const warns = res.warn[e.id];
     const d = new Date(e.ts);
     return `
       <div class="hist-item">
-        <div class="when"><b>${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</b>${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</div>
+        <div class="when"><b>${d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</b>${fmtTime(e.ts)}</div>
         <div class="hist-main">
           <div class="hist-top">
-            <div class="hist-title">${f(e.odo, 1)}<small>km · ${socTxt}</small></div>
-            <span class="tag ${e.event === 'charge' ? 'dc' : ''}">${E[e.event] || e.event}</span>
+            <div class="hist-title">${odo !== null ? f(odo, 1) + '<small>km · ' + socTxt + '</small>' : socTxt}</div>
+            <span class="tag ${e.event === 'chargeEnd' ? 'dc' : ''}">${LABEL[e.event] || e.event}</span>
           </div>
-          ${parts.map(p => `<div class="hist-line">${p}</div>`).join('')}
+          ${lines.map(l => `<div class="hist-line">${esc(l)}</div>`).join('')}
           ${notes.length ? `<div class="hist-note">${esc(notes.join(' · '))}</div>` : ''}
           ${warns ? `<span class="flag">${warns.join(', ')}</span>` : ''}
-          <div><button class="del" data-id="${esc(e.id)}">ลบรายการ</button></div>
+          <div><button class="del" data-id="${esc(e.id)}" type="button">ลบรายการ</button></div>
         </div>
       </div>`;
   }).join('');
 }
 
-/* ---------- delete (two-tap confirm, no native dialogs) ---------- */
+function legHtml(s) {
+  return `
+    <div class="li">
+      <div class="li-h"><b>${LABEL[s.from.event]} → ${LABEL[s.to.event]}</b><span>${fmtTime(s.from.ts)} – ${fmtTime(s.to.ts)}</span></div>
+      <div class="kv">
+        <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
+        <div><span>เวลา</span><b>${fmtDur(s.minutes)}</b></div>
+        <div><span>พลังงานที่ใช้</span><b>${s.kwh !== null ? f(s.kwh, 2) + ' kWh' : '–'}</b></div>
+        <div><span>อัตราใช้ไฟ</span><b>${f(s.cons, 1)} /100km</b></div>
+        <div><span>ค่าไฟต่อ km</span><b>${s.costPerKm === null ? '–' : f(s.costPerKm, 2) + ' ฿'}</b></div>
+      </div>
+    </div>`;
+}
+
+function chHtml(c) {
+  return `
+    <div class="li charge">
+      <div class="li-h"><b>ชาร์จ DC</b><span>${fmtTime(c.startTs)} – ${fmtTime(c.ts)}</span></div>
+      <div class="kv">
+        <div><span>แบต</span><b>${f(c.socBefore, 0)} → ${f(c.socAfter, 0)}%</b></div>
+        <div><span>เวลาชาร์จ</span><b>${fmtDur(c.minutes)}</b></div>
+        <div><span>พลังงาน</span><b>${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}</b></div>
+        <div><span>ค่าชาร์จ</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>
+        <div><span>฿ / kWh</span><b>${c.cost !== null && c.kwh > 0 ? f(c.cost / c.kwh, 2) : '–'}</b></div>
+      </div>
+    </div>`;
+}
+
+function renderLegs(res) {
+  const t = res.t;
+  $('cKm').innerHTML = `${t.totalKm ? f(t.totalKm, 1) : '–'}<small>km</small>`;
+  $('cCons').innerHTML = `${t.avgCons === null ? '–' : f(t.avgCons, 1)}<small>kWh/100km</small>`;
+  $('cCostKm').innerHTML = `${t.estCostPerKm === null ? '–' : f(t.estCostPerKm, 2)}<small>฿/km</small>`;
+  const items = [
+    ...res.segs.map(s => ({ ts: s.to.ts, html: legHtml(s) })),
+    ...res.ch.map(c => ({ ts: c.ts, html: chHtml(c) })),
+  ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  $('legCount').textContent = items.length ? `${items.length} รายการ` : '';
+  $('legs').innerHTML = items.length
+    ? items.map(i => i.html).join('')
+    : '<div class="empty">ยังไม่มีช่วงที่คิดค่าได้ ต้องมีบันทึกอย่างน้อย 2 รายการ และตั้งความจุแบตในตั้งค่ารถ</div>';
+}
+
+/* ---------- ลบรายการ (กดสองครั้งเพื่อยืนยัน ไม่ใช้ confirm) ---------- */
 $('hist').addEventListener('click', async e => {
   const btn = e.target.closest('button.del');
   if (!btn || busy) return;

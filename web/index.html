@@ -103,6 +103,10 @@
     background: transparent; color: var(--text-2); border: 1px solid var(--line-2);
     border-radius: 999px; padding: 6px 14px; font-size: 13.5px; cursor: pointer; height: auto;
   }
+  .back-btn {
+    background: var(--accent); color: var(--accent-ink); border: 0;
+    border-radius: 999px; padding: 6px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; height: auto;
+  }
   .tabbtn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
 
   /* ---------- layout ---------- */
@@ -386,12 +390,12 @@
   <div class="top-in">
     <div class="brand"><span id="brandName">EV Tracker</span><small id="carName"></small></div>
     <div class="top-r">
-      <button class="pill-btn" data-home type="button">← ประเภท</button>
       <span id="sync" class="sync">กำลังเชื่อมต่อ…</span>
       <button id="carBtn" class="pill-btn" type="button">⚙️ ตั้งค่ารถ</button>
     </div>
   </div>
   <nav class="tabs">
+    <button class="back-btn" data-home type="button">← เลือกประเภท</button>
     <button class="tabbtn on" data-go="main" type="button">🏠 หน้าหลัก</button>
     <button class="tabbtn" data-go="calc" type="button">💰 คิดค่า</button>
   </nav>

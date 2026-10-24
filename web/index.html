@@ -94,7 +94,7 @@
 
   /* ---------- segmented ---------- */
   .seg {
-    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
     background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 4px;
     margin-bottom: 18px;
   }
@@ -107,6 +107,8 @@
   .seg input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
   .seg label:has(input:checked) { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .seg label:has(input:focus-visible) { box-shadow: 0 0 0 2px var(--text); }
+
+  .seg label { font-size: 13px; padding-left: 2px; padding-right: 2px; }
 
   /* ---------- fields ---------- */
   .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
@@ -235,6 +237,18 @@
 
   .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
 
+  /* ---------- trips ---------- */
+  .trip { padding: 16px 18px; border-top: 1px solid var(--line); }
+  .trip:first-child { border-top: 0; }
+  .trip-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .trip-h b { display: block; font-weight: 600; font-size: 15px; }
+  .trip-h span { font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
+  .trip-k { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .trip-k > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .trip-k > div:first-child { grid-column: 1 / -1; }
+  .trip-k span { display: block; font-size: 11.5px; color: var(--muted); }
+  .trip-k b { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; margin-top: 2px; overflow-wrap: anywhere; }
+
   /* ---------- toast + notice ---------- */
   .toast {
     position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
@@ -274,6 +288,7 @@
             <label><input type="radio" name="event" value="start" checked>เริ่มต้น</label>
             <label><input type="radio" name="event" value="drive">ระหว่างทาง</label>
             <label><input type="radio" name="event" value="charge">ชาร์จ DC</label>
+            <label><input type="radio" name="event" value="end">สิ้นสุด</label>
           </div>
 
           <div class="grid">
@@ -396,6 +411,12 @@
     </section>
 
     <section class="card">
+      <div class="card-h"><h2>ทริป</h2><span id="tripCount"></span></div>
+      <div style="padding:10px 18px 0"><button id="copyTrips" class="del" style="margin-top:0">คัดลอกสรุปทริป</button></div>
+      <div id="trips" style="padding-top:8px"></div>
+    </section>
+
+    <section class="card">
       <div class="card-h"><h2>แยกตามโหมดขับ</h2></div>
       <div id="modes" style="padding-top:8px"></div>
     </section>
@@ -417,7 +438,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyNs5F_4gKsvEwIagsyD69a
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
-const E = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', charge: 'ชาร์จ DC' };
+const E = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', charge: 'ชาร์จ DC', end: 'สิ้นสุดทริป' };
 const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
 const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
 const sum = a => a.reduce((x, y) => x + y, 0);
@@ -428,6 +449,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 let D = { entries: [], settings: {} };
 let saveTimer = null;
 let busy = false;
+let lastTrips = [];
 
 /* ---------- api ---------- */
 async function apiGet() {
@@ -476,6 +498,25 @@ async function load() {
   catch (err) { setSync('โหลดไม่สำเร็จ', true); toast('โหลดข้อมูลไม่สำเร็จ: ' + err.message, true); }
 }
 
+/* ---------- trips ---------- */
+const newBucket = () => ({ startTs: null, segs: [], charges: [] });
+
+function finishTrip(b, endTs, ended) {
+  const km = sum(b.segs.map(s => s.km));
+  const valid = b.segs.filter(s => s.valid);
+  const ekm = sum(valid.map(s => s.km));
+  const ekwh = sum(valid.map(s => s.kwh));
+  const charged = b.charges.filter(c => c.kwh !== null);
+  const costs = b.charges.filter(c => c.cost !== null);
+  const minutes = b.startTs && endTs ? Math.round((new Date(endTs) - new Date(b.startTs)) / 60000) : null;
+  return {
+    ended, startTs: b.startTs, endTs, minutes,
+    km, kwh: ekwh, cons: ekm > 0 ? (ekwh / ekm) * 100 : null,
+    charges: b.charges.length, chKwh: sum(charged.map(c => c.kwh)),
+    cost: costs.length ? sum(costs.map(c => c.cost)) : null,
+  };
+}
+
 /* ---------- calculation ---------- */
 function analyze(entries, st) {
   const cap = num(st.capacity) || 0;
@@ -484,11 +525,14 @@ function analyze(entries, st) {
     .filter(e => num(e.odo) !== null && num(e.soc) !== null)
     .sort((a, b) => new Date(a.ts) - new Date(b.ts) || a.odo - b.odo);
 
-  const segs = [], ch = [], warn = {};
+  const segs = [], ch = [], warn = {}, trips = [];
+  let bucket = newBucket();
   const w = (id, m) => (warn[id] = warn[id] || []).push(m);
   let state = null;
 
   for (const e of sorted) {
+    const segMark = segs.length, chMark = ch.length;
+    if (!bucket.startTs) bucket.startTs = e.ts;
     const odo = num(e.odo), soc = num(e.soc);
     if (state) {
       const km = odo - state.odo, drop = state.soc - soc;
@@ -517,6 +561,15 @@ function analyze(entries, st) {
     } else {
       state = { odo, soc, range: num(e.range), ts: e.ts };
     }
+    bucket.segs.push(...segs.slice(segMark));
+    bucket.charges.push(...ch.slice(chMark));
+    if (e.event === 'end') {
+      trips.push(finishTrip(bucket, e.ts, true));
+      bucket = newBucket();
+    }
+  }
+  if (bucket.startTs && (bucket.segs.length || bucket.charges.length)) {
+    trips.push(finishTrip(bucket, null, false));
   }
 
   const totalKm = sum(segs.map(s => s.km));
@@ -550,7 +603,7 @@ function analyze(entries, st) {
   ch.forEach(c => chById[c.id] = c);
 
   return {
-    segs, warn, segById, chById, byMode,
+    segs, warn, segById, chById, byMode, trips,
     t: {
       totalKm, energyKwh: ekwh, avgCons, chKwh, totalCost,
       missing: ch.length - withCost.length, avgPrice,
@@ -691,6 +744,7 @@ function render() {
   renderChart(res.segs.filter(s => s.cons !== null));
   renderModes(res.byMode);
   renderHistory(sorted, res);
+  renderTrips(res.trips);
 }
 
 function renderChart(pts) {
@@ -731,6 +785,62 @@ function renderModes(rows) {
       </div>`).join('')
     : '<div class="empty">ยังไม่มีข้อมูลตามโหมด</div>';
 }
+
+function tripDur(tr) {
+  return tr.minutes !== null ? `${Math.floor(tr.minutes / 60)} ชม. ${tr.minutes % 60} นาที` : '';
+}
+
+function renderTrips(trips) {
+  lastTrips = trips;
+  const list = [...trips].reverse();
+  $('tripCount').textContent = list.length ? `${list.length} ทริป` : '';
+  $('trips').innerHTML = list.length
+    ? list.map((tr, i) => {
+        const n = list.length - i;
+        const dur = tripDur(tr);
+        return `
+      <div class="trip">
+        <div class="trip-h">
+          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'}${dur ? ' · ' + dur : ''}</span></div>
+          <span class="tag ${tr.ended ? 'dc' : ''}">${tr.ended ? 'สิ้นสุด' : 'ยังไม่จบ'}</span>
+        </div>
+        <div class="trip-k">
+          <div><span>ระยะทาง</span><b>${f(tr.km, 1)} km</b></div>
+          <div><span>อัตราใช้ไฟ</span><b>${f(tr.cons, 1)} /100km</b></div>
+          <div><span>พลังงานที่ใช้</span><b>${f(tr.kwh, 1)} kWh</b></div>
+          <div><span>ชาร์จ</span><b>${tr.charges} ครั้ง · ${f(tr.chKwh, 1)} kWh</b></div>
+          <div><span>ค่าชาร์จ</span><b>${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}</b></div>
+        </div>
+      </div>`;
+      }).join('')
+    : '<div class="empty">ยังไม่มีทริป กดบันทึก “สิ้นสุด” เมื่อถึงที่หมาย</div>';
+}
+
+function tripSummaryText(trips) {
+  const list = [...trips].reverse();
+  return list.map((tr, i) => {
+    const n = list.length - i;
+    const when = tr.startTs ? fmtDate(tr.startTs) : '';
+    const dur = tripDur(tr);
+    const head = `ทริป ${n} · ${when}${dur ? ' · ' + dur : ''}${tr.ended ? '' : ' · ยังไม่จบ'}`;
+    return [
+      head,
+      `ระยะทาง ${f(tr.km, 1)} km · ใช้ไฟ ${f(tr.cons, 1)} kWh/100km · พลังงาน ${f(tr.kwh, 2)} kWh`,
+      `ชาร์จ ${tr.charges} ครั้ง ${f(tr.chKwh, 2)} kWh · ค่าชาร์จ ${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}`,
+    ].join('\n');
+  }).join('\n\n');
+}
+
+document.addEventListener('click', async e => {
+  if (e.target.id !== 'copyTrips') return;
+  if (!lastTrips.length) return toast('ยังไม่มีทริปให้คัดลอก', true);
+  try {
+    await navigator.clipboard.writeText(tripSummaryText(lastTrips));
+    toast('คัดลอกสรุปแล้ว');
+  } catch (_) {
+    toast('คัดลอกไม่ได้ในเบราว์เซอร์นี้', true);
+  }
+});
 
 function renderHistory(sorted, res) {
   if (!sorted.length) { $('hist').innerHTML = '<div class="empty">ยังไม่มีบันทึก เริ่มจากกรอก “เริ่มต้น”</div>'; return; }

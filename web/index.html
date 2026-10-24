@@ -29,7 +29,9 @@
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html, body { margin: 0; }
+  html, body { margin: 0; max-width: 100%; overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; }
+  main, .col, .card, .side-form { min-width: 0; max-width: 100%; }
+  svg { max-width: 100%; }
   body {
     min-height: 100vh;
     background:

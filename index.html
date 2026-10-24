@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EV Tracker — บันทึกการใช้รถไฟฟ้า</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>⚡ EV Tracker</h1>
+    <p class="sub">บันทึกไมล์ แบต% และโหมดขับ เพื่อคำนวณอัตราการใช้ไฟ ระยะทาง และค่าใช้จ่าย</p>
+  </header>
+
+  <main>
+    <section class="card" id="settings">
+      <h2>ตั้งค่ารถ</h2>
+      <div class="grid4">
+        <label>ชื่อรถ<input id="setName" placeholder="เช่น Tesla Model 3"></label>
+        <label>ความจุแบต (kWh)<input id="setCap" type="number" step="0.1" min="0" placeholder="เช่น 57.5"></label>
+        <label>ราคาไฟบ้าน (฿/kWh)<input id="setHome" type="number" step="0.01" min="0"></label>
+        <label>ราคาชาร์จสาธารณะ (฿/kWh)<input id="setPublic" type="number" step="0.01" min="0"></label>
+      </div>
+      <p id="capWarn" class="hint warn" hidden>ใส่ความจุแบตก่อน จึงจะคำนวณ kWh และอัตราการใช้ไฟได้</p>
+    </section>
+
+    <section class="card">
+      <h2>บันทึกใหม่</h2>
+      <form id="entryForm" autocomplete="off">
+        <fieldset class="events">
+          <label><input type="radio" name="event" value="start" checked> จุดเริ่มต้น</label>
+          <label><input type="radio" name="event" value="drive"> ระหว่างทาง</label>
+          <label><input type="radio" name="event" value="charge"> ชาร์จ</label>
+        </fieldset>
+
+        <div class="grid4">
+          <label>เวลา<input name="time" type="datetime-local" required></label>
+          <label>เลขไมล์ (km)<input name="odo" type="number" step="0.1" min="0" required></label>
+          <label><span id="socLabel">แบต (%)</span><input name="soc" type="number" min="0" max="100" step="0.1" required></label>
+          <label>ระยะที่โชว์บนจอ (km)<input name="range" type="number" step="0.1" min="0"></label>
+          <label>Trip meter (km)<input name="trip" type="number" step="0.1" min="0"></label>
+          <label>โหมดขับ<input name="mode" list="modes" placeholder="Eco / Normal / Sport"></label>
+        </div>
+        <datalist id="modes">
+          <option>Eco</option><option>Normal</option><option>Sport</option>
+          <option>Comfort</option><option>Snow</option><option>B (Regen)</option>
+        </datalist>
+
+        <div id="chargeFields" class="grid4" hidden>
+          <label>แบต (%) หลังชาร์จ<input name="socAfter" type="number" min="0" max="100" step="0.1"></label>
+          <label>kWh ที่เติม (ถ้ารู้)<input name="kwh" type="number" min="0" step="0.01"></label>
+          <label>ค่าใช้จ่าย ฿ (ถ้ารู้)<input name="cost" type="number" min="0" step="0.01"></label>
+          <label>ประเภทชาร์จ
+            <select name="charger"><option value="home">ที่บ้าน</option><option value="public">สาธารณะ</option></select>
+          </label>
+        </div>
+
+        <label class="full">หมายเหตุ<input name="note" placeholder="เช่น ติดไฟแดง, เปิดแอร์"></label>
+        <div class="actions"><button type="submit">บันทึก</button><span id="formMsg" class="hint"></span></div>
+      </form>
+      <p class="hint">โหมดที่กรอกจะถูกนับกับระยะทางตั้งแต่บันทึกก่อนหน้ามาถึงบันทึกนี้</p>
+    </section>
+
+    <section>
+      <h2>สรุป</h2>
+      <div id="last" class="hint"></div>
+      <div id="summary" class="cards"></div>
+      <p id="missingCost" class="hint warn" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2>แยกตามโหมดขับ</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>โหมด</th><th>ระยะ (km)</th><th>ใช้ (kWh)</th><th>kWh/100 km</th></tr></thead>
+          <tbody id="modes-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row-between">
+        <h2>ประวัติทั้งหมด</h2>
+        <div class="actions">
+          <button id="exportCsv" class="ghost">Export CSV</button>
+          <button id="exportJson" class="ghost">Backup JSON</button>
+          <label class="ghost file-btn">Import JSON<input id="importFile" type="file" accept="application/json"></label>
+        </div>
+      </div>
+      <p class="hint">ข้อมูลเก็บในเบราว์เซอร์นี้ (localStorage) — ควร Backup JSON เป็นระยะ เพราะถ้าล้างข้อมูลของเบราว์เซอร์ ข้อมูลจะหาย</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>เวลา</th><th>ประเภท</th><th>ไมล์</th><th>แบต</th><th>ระยะจอ</th><th>โหมด / หมายเหตุ</th><th>ช่วงนี้ / การชาร์จ</th><th></th></tr>
+          </thead>
+          <tbody id="entries"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="calc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

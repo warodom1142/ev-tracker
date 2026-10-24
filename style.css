@@ -1,0 +1,137 @@
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --text: #1d2330;
+  --muted: #6b7280;
+  --line: #e3e6eb;
+  --accent: #0f9d58;
+  --danger: #d93025;
+  --warn: #b26a00;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --card: #1b2028;
+    --text: #e8ebf0;
+    --muted: #9aa3b2;
+    --line: #2c333d;
+  }
+}
+
+[hidden] { display: none !important; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+header { padding: 20px 16px 4px; max-width: 1100px; margin: 0 auto; }
+h1 { margin: 0; font-size: 1.5rem; }
+h2 { margin: 0 0 12px; font-size: 1.1rem; }
+.sub, .hint { color: var(--muted); font-size: 0.9rem; margin: 6px 0; }
+.hint.warn, .warn { color: var(--warn); }
+.hint.error { color: var(--danger); }
+.hint.ok { color: var(--accent); }
+.sub-text { color: var(--muted); font-size: 0.8rem; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 8px 16px 40px; display: grid; gap: 16px; }
+.card, section { background: var(--card); border-radius: var(--radius); padding: 16px; }
+section:not(.card) { background: transparent; padding: 0; }
+section:not(.card) > h2 { margin-top: 4px; }
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+label.full { margin-top: 4px; }
+input, select, button {
+  font: inherit;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  min-width: 0;
+}
+input[type="radio"] { width: auto; padding: 0; margin-right: 4px; }
+fieldset.events {
+  border: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+fieldset.events label {
+  flex-direction: row;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+}
+fieldset.events label:has(input:checked) { border-color: var(--accent); background: rgba(15, 157, 88, 0.1); }
+
+.actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+button:hover { filter: brightness(1.08); }
+button.ghost, .file-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  flex-direction: row;
+}
+button.danger { background: var(--danger); }
+button.small { padding: 4px 8px; font-size: 0.8rem; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.stat { background: var(--card); border-radius: var(--radius); padding: 14px; }
+.stat .label { color: var(--muted); font-size: 0.8rem; }
+.stat .value { font-size: 1.5rem; font-weight: 700; margin: 2px 0; }
+.stat .unit { color: var(--muted); font-size: 0.75rem; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+td.detail { white-space: normal; min-width: 220px; }
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  background: var(--line);
+}
+.tag-charge { background: rgba(15, 157, 88, 0.18); }
+.tag-start { background: rgba(59, 130, 246, 0.18); }
+.warn-badge { color: var(--warn); cursor: help; font-weight: 700; margin-left: 4px; }
+
+@media (max-width: 600px) {
+  h1 { font-size: 1.3rem; }
+  .stat .value { font-size: 1.25rem; }
+}

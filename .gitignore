@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+*.log
+ev-tracker-*.json
+ev-tracker-*.csv

@@ -487,7 +487,13 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyNs5F_4gKsvEwIagsyD69a
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
-const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ (เก่า)' };
+const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ' };
+// ชื่อขั้นตอนแบบมีลำดับจุดชาร์จ เช่น "ชาร์จจุดที่ 1"
+const stepName = (ev, no) => {
+  if (ev === 'chargeStart') return `ถึงจุดชาร์จที่ ${no}`;
+  if (ev === 'chargeEnd' || ev === 'charge') return `ชาร์จจุดที่ ${no}`;
+  return LABEL[ev] || ev;
+};
 const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
 const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
 const sum = a => a.reduce((x, y) => x + y, 0);
@@ -584,6 +590,8 @@ function analyze(entries, st) {
   const segs = [], ch = [], warn = {}, trips = [];
   const w = (id, m) => (warn[id] = warn[id] || []).push(m);
   let state = null, pending = null, bucket = newBucket();
+  let chargeNo = 0;
+  const noById = {};
 
   const addCharge = (id, start, endTs, socAfter, e) => {
     const socBefore = start.soc;
@@ -596,12 +604,15 @@ function analyze(entries, st) {
     ch.push({
       id, startTs: start.ts, ts: endTs,
       minutes: (new Date(endTs) - new Date(start.ts)) / 60000,
-      socBefore, socAfter, kwh, kwhManual: kin !== null, gained, cost,
+      no: chargeNo, socBefore, socAfter, kwh, kwhManual: kin !== null, gained, cost,
     });
   };
 
   for (const e of sorted) {
     const segMark = segs.length, chMark = ch.length;
+    // ลำดับจุดชาร์จ: ถึงจุดชาร์จและชาร์จเสร็จของครั้งเดียวกันใช้เลขเดียวกัน
+    const evNo = (e.event === 'chargeStart' || e.event === 'chargeEnd' || e.event === 'charge') ? chargeNo + 1 : undefined;
+    if (evNo !== undefined) noById[e.id] = evNo;
     if (!bucket.startTs) bucket.startTs = e.ts;
     const soc = num(e.soc);
     let odo = num(e.odo);
@@ -618,8 +629,8 @@ function analyze(entries, st) {
         const kwh = cap > 0 ? (drop / 100) * cap : null;
         segs.push({
           id: e.id,
-          from: { ts: state.ts, odo: state.odo, soc: state.soc, event: state.event },
-          to: { ts: e.ts, odo, soc, event: e.event },
+          from: { ts: state.ts, odo: state.odo, soc: state.soc, event: state.event, no: state.no },
+          to: { ts: e.ts, odo, soc, event: e.event, no: evNo },
           km, minutes: (new Date(e.ts) - new Date(state.ts)) / 60000,
           kwh, valid, mode: e.mode || '',
           cons: valid ? (kwh / km) * 100 : null,
@@ -632,17 +643,19 @@ function analyze(entries, st) {
     // 2) ประเภทของบันทึก
     if (e.event === 'chargeStart') {
       pending = { id: e.id, ts: e.ts, odo, soc };
-      state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event };
+      state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event, no: evNo };
     } else if (e.event === 'chargeEnd') {
       const start = pending || (state ? { ts: state.ts, soc: state.soc } : { ts: e.ts, soc: null });
+      chargeNo++;
       addCharge(e.id, start, e.ts, soc, e);
       pending = null;
-      state = { odo, soc, range: null, ts: e.ts, event: e.event };
+      state = { odo, soc, range: null, ts: e.ts, event: e.event, no: evNo };
     } else if (e.event === 'charge') {
       // ข้อมูลเก่า: ชาร์จเป็นบันทึกเดียว
       const sa = num(e.socAfter);
+      chargeNo++;
       addCharge(e.id, { ts: e.ts, soc }, e.ts, sa, e);
-      state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts, event: e.event };
+      state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts, event: e.event, no: evNo };
     } else {
       state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event };
     }
@@ -697,7 +710,7 @@ function analyze(entries, st) {
   ch.forEach(c => chById[c.id] = c);
 
   return {
-    segs, ch, warn, segById, chById, byMode, trips,
+    segs, ch, warn, segById, chById, noById, byMode, trips,
     t: {
       totalKm, driveMin, chMin, energyKwh: ekwh, avgCons, chKwh, totalCost,
       missing: ch.length - withCost.length, avgPrice,
@@ -967,7 +980,7 @@ function renderHistory(sorted, res) {
     const odo = num(e.odo);
     const socTxt = e.event === 'chargeEnd' ? `→ ${f(e.soc, 0)}%` : `${f(e.soc, 0)}%`;
     const lines = [];
-    if (seg) lines.push(`${LABEL[seg.from.event]} → ${fmtTime(seg.from.ts)} · ${fmtDur(seg.minutes)} · ${f(seg.km, 1)} km` + (seg.cons !== null ? ` · ${f(seg.cons, 1)}/100km` : ''));
+    if (seg) lines.push(`${stepName(seg.from.event, seg.from.no)} → ${fmtTime(seg.from.ts)} · ${fmtDur(seg.minutes)} · ${f(seg.km, 1)} km` + (seg.cons !== null ? ` · ${f(seg.cons, 1)}/100km` : ''));
     if (c) lines.push(`ชาร์จ ${fmtDur(c.minutes)} · ${f(c.socBefore, 0)}→${f(c.socAfter, 0)}% · ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
     const notes = [];
     if (e.range !== null && e.range !== '') notes.push(`จอ ${f(num(e.range), 1)} km`);
@@ -982,7 +995,7 @@ function renderHistory(sorted, res) {
         <div class="hist-main">
           <div class="hist-top">
             <div class="hist-title">${odo !== null ? f(odo, 1) + '<small>km · ' + socTxt + '</small>' : socTxt}</div>
-            <span class="tag ${e.event === 'chargeEnd' ? 'dc' : ''}">${LABEL[e.event] || e.event}</span>
+            <span class="tag ${e.event === 'chargeEnd' ? 'dc' : ''}">${stepName(e.event, res.noById[e.id])}</span>
           </div>
           ${lines.map(l => `<div class="hist-line">${esc(l)}</div>`).join('')}
           ${notes.length ? `<div class="hist-note">${esc(notes.join(' · '))}</div>` : ''}
@@ -996,7 +1009,7 @@ function renderHistory(sorted, res) {
 function legHtml(s) {
   return `
     <div class="li">
-      <div class="li-h"><b>${LABEL[s.from.event]} → ${LABEL[s.to.event]}</b><span>${fmtTime(s.from.ts)} – ${fmtTime(s.to.ts)}</span></div>
+      <div class="li-h"><b>${stepName(s.from.event, s.from.no)} → ${stepName(s.to.event, s.to.no)}</b><span>${fmtTime(s.from.ts)} – ${fmtTime(s.to.ts)}</span></div>
       <div class="kv">
         <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
         <div><span>เวลา</span><b>${fmtDur(s.minutes)}</b></div>
@@ -1010,7 +1023,7 @@ function legHtml(s) {
 function chHtml(c) {
   return `
     <div class="li charge">
-      <div class="li-h"><b>ชาร์จ DC</b><span>${fmtTime(c.startTs)} – ${fmtTime(c.ts)}</span></div>
+      <div class="li-h"><b>ชาร์จจุดที่ ${c.no}</b><span>${fmtTime(c.startTs)} – ${fmtTime(c.ts)}</span></div>
       <div class="kv">
         <div><span>แบต</span><b>${f(c.socBefore, 0)} → ${f(c.socAfter, 0)}%</b></div>
         <div><span>เวลาชาร์จ</span><b>${fmtDur(c.minutes)}</b></div>

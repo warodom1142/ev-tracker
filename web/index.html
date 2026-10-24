@@ -308,6 +308,11 @@
     background: var(--surface-3); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px;
     font: inherit; font-size: 16px; appearance: none; -webkit-appearance: none;
   }
+  .rsum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .rsum > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .rsum span { display: block; font-size: 11.5px; color: var(--muted); }
+  .rsum b { font-family: var(--mono); font-weight: 500; font-size: 15px; }
+  .leaflet-popup-content { font-family: var(--font); font-size: 13px; line-height: 1.5; margin: 12px 14px; }
   .route-map { height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
   .rnum { background: transparent; border: 0; box-shadow: none; color: #08090c; font: 600 12px var(--mono); padding: 0; }
   .rnum::before { display: none; }
@@ -1103,13 +1108,45 @@ function renderRoute(res) {
   sel.value = String(idx);
   const pts = groups[idx].filter(e => num(e.lat) !== null && num(e.lng) !== null);
   $('routeBody').innerHTML = pts.length
-    ? '<div id="routeMap" class="route-map"></div>' + routeList(groups[idx], res)
+    ? routeSummary(groups[idx], res) + '<div id="routeMap" class="route-map"></div>' + routeList(groups[idx], res)
     : '<div class="empty">ทริปนี้ยังไม่มีพิกัด GPS<br>บันทึกใหม่หลังอนุญาตตำแหน่งแล้วจะขึ้นเส้นทาง</div>';
-  if (pts.length) showRoute(pts);
+  if (pts.length) showRoute(pts, res);
+}
+
+// สรุปของทริปที่เลือก: ระยะ เวลา อัตราใช้ไฟ ค่าชาร์จ
+function routeSummary(group, res) {
+  const ids = new Set(group.map(e => e.id));
+  const ss = res.segs.filter(s => ids.has(s.id));
+  const valid = ss.filter(s => s.valid);
+  const km = sum(ss.map(s => s.km));
+  const vkm = sum(valid.map(s => s.km));
+  const kwh = sum(valid.map(s => s.kwh));
+  const mins = sum(ss.map(s => s.minutes));
+  const cost = sum(res.ch.filter(c => ids.has(c.id) && c.cost !== null).map(c => c.cost));
+  const cons = vkm > 0 ? (kwh / vkm) * 100 : null;
+  const items = [
+    ['ระยะทาง', `${f(km, 1)} km`],
+    ['เวลาขับ', fmtDur(mins)],
+    ['kWh/100km', cons === null ? '–' : f(cons, 1)],
+    ['ค่าชาร์จ', cost ? `${f(cost, 0)} ฿` : '–'],
+  ];
+  return `<div class="rsum">${items.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+}
+
+// ข้อความในป๊อปอัพของแต่ละจุดบนแผนที่
+function popupHtml(p, res) {
+  const seg = res.segById[p.id], c = res.chById[p.id], no = res.noById[p.id];
+  const odo = num(p.odo), soc = num(p.soc);
+  const rows = [`<b>${esc(stepName(p.event, no))}</b>`, fmtTime(p.ts)];
+  if (odo !== null) rows.push(`เลขไมล์ ${f(odo, 1)} km`);
+  if (soc !== null) rows.push(`แบต ${f(soc, 0)}%`);
+  if (seg) rows.push(`ช่วงก่อนหน้า ${f(seg.km, 1)} km · ${fmtDur(seg.minutes)}` + (seg.cons !== null ? ` · ${f(seg.cons, 1)} kWh/100km` : ''));
+  if (c) rows.push(`ชาร์จ ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '–'} · ${fmtDur(c.minutes)}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
+  return rows.join('<br>');
 }
 
 // แผนที่ OpenStreetMap ผ่าน Leaflet (ไม่ต้องใช้ key) ถ้าโหลดไม่ได้จะใช้ SVG แทน
-function showRoute(pts) {
+function showRoute(pts, res) {
   const el = $('routeMap');
   if (!el) return;
   if (!window.L) { el.outerHTML = routeSvg(pts); return; }
@@ -1123,6 +1160,7 @@ function showRoute(pts) {
   pts.forEach((p, i) => {
     L.circleMarker(ll[i], { radius: 10, color: '#08090c', weight: 2, fillColor: EV_COLOR[p.event] || '#fff', fillOpacity: 1 })
       .bindTooltip(String(i + 1), { permanent: true, direction: 'center', className: 'rnum' })
+      .bindPopup(popupHtml(p, res))
       .addTo(map);
   });
   map.fitBounds(L.latLngBounds(ll).pad(0.25), { maxZoom: 16 });

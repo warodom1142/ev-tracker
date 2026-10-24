@@ -22,6 +22,8 @@
     --muted: #7d8494;
     --accent: #f2f3f5;
     --accent-ink: #08090c;
+    --drive: #6cb6ff;
+    --charge: #f5b942;
     --radius: 20px;
     --radius-sm: 14px;
     --font: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -260,12 +262,15 @@
   .kv b { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; margin-top: 2px; overflow-wrap: anywhere; }
 
   /* ---------- legs (คิดค่า) ---------- */
-  .li { padding: 16px 18px; border-top: 1px solid var(--line); }
+  .li { padding: 16px 18px 16px 15px; border-top: 1px solid var(--line); border-left: 3px solid var(--drive); }
   .li:first-child { border-top: 0; }
   .li-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .li-h b { font-weight: 600; font-size: 14.5px; }
   .li-h span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
-  .li.charge { background: rgba(255,255,255,.025); }
+  .li.charge { background: rgba(245, 185, 66, .06); border-left-color: var(--charge); }
+  .li.charge .li-h b { color: var(--charge); }
+  .li-kind { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--drive); }
+  .li.charge .li-kind { color: var(--charge); }
 
   .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
 
@@ -1009,6 +1014,7 @@ function renderHistory(sorted, res) {
 function legHtml(s) {
   return `
     <div class="li">
+      <div class="li-kind">ขับรถ</div>
       <div class="li-h"><b>${stepName(s.from.event, s.from.no)} → ${stepName(s.to.event, s.to.no)}</b><span>${fmtTime(s.from.ts)} – ${fmtTime(s.to.ts)}</span></div>
       <div class="kv">
         <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
@@ -1023,6 +1029,7 @@ function legHtml(s) {
 function chHtml(c) {
   return `
     <div class="li charge">
+      <div class="li-kind">ชาร์จ</div>
       <div class="li-h"><b>ชาร์จจุดที่ ${c.no}</b><span>${fmtTime(c.startTs)} – ${fmtTime(c.ts)}</span></div>
       <div class="kv">
         <div><span>แบต</span><b>${f(c.socBefore, 0)} → ${f(c.socAfter, 0)}%</b></div>

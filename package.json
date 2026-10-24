@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "เว็บแอปบันทึกการใช้รถไฟฟ้า คำนวณอัตราการใช้ไฟ ระยะทาง และค่าใช้จ่าย",
-  "main": "calc.js",
+  "main": "local/calc.js",
   "scripts": {
-    "test": "node --test tests/calc.test.js"
+    "test": "node --test local/tests/calc.test.js"
   },
   "engines": {
     "node": ">=18"

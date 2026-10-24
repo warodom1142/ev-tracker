@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EV Tracker</title>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --field:#d1d5db; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Sarabun", "Segoe UI", sans-serif;
+    font-size: 15px; line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 14px 56px; display: grid; gap: 14px; }
+  header h1 { font-size: 22px; margin: 2px 0 0; font-weight: 700; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+  .card h2 { font-size: 14px; margin: 0 0 12px; font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid > * { min-width: 0; }
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+  .span2 { grid-column: 1 / -1; }
+
+  input {
+    font: inherit; font-size: 15px; color: var(--ink); background: #fff;
+    border: 1px solid var(--field); border-radius: 8px;
+    height: 40px; padding: 8px 10px; width: 100%; min-width: 0;
+  }
+  input:focus { outline: 2px solid var(--ink); outline-offset: -1px; border-color: var(--ink); }
+
+  .seg {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--field); border-radius: 8px; overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .seg label {
+    position: relative; text-align: center; padding: 10px 6px;
+    font-size: 14px; color: var(--muted); cursor: pointer;
+    border-left: 1px solid var(--field);
+  }
+  .seg label:first-child { border-left: 0; }
+  .seg input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  .seg label:has(input:checked) { background: var(--ink); color: #fff; font-weight: 600; }
+  .seg label:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+  button {
+    font: inherit; font-size: 15px; font-weight: 600; color: #fff; background: var(--ink);
+    border: 0; border-radius: 8px; height: 44px; width: 100%; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button.text {
+    width: auto; height: auto; padding: 4px 0; background: none; color: var(--muted);
+    font-size: 13px; font-weight: 500; text-decoration: underline;
+  }
+
+  .hint { font-size: 13px; color: var(--muted); margin: 0; }
+  .status { font-size: 13px; color: var(--muted); min-height: 18px; margin: 0; }
+
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .tile { border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+  .tile .k { font-size: 12px; color: var(--muted); }
+  .tile .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; overflow-wrap: anywhere; }
+  .tile .u { font-size: 12px; color: var(--muted); }
+
+  .rows > div { padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .rows { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; }
+  .rows .val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rows .unit { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 4px; }
+
+  .entries { display: grid; gap: 10px; }
+  .entry { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 3px; font-size: 14px; min-width: 0; }
+  .entry .head { font-weight: 600; overflow-wrap: anywhere; }
+  .entry .tag { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--field); border-radius: 999px; padding: 0 8px; margin-right: 6px; font-weight: 500; }
+  .entry .line { color: var(--ink); overflow-wrap: anywhere; }
+  .entry .meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+  .entry .foot { margin-top: 6px; }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 12px 0; }
+
+  @media (max-width: 420px) {
+    .grid, .tiles { grid-template-columns: 1fr; }
+    .card { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>EV Tracker</h1>
+    <p>บันทึกไมล์ แบต และโหมดขับ เพื่อดูอัตราการใช้ไฟ</p>
+  </header>
+
+  <p id="status" class="status">กำลังโหลด...</p>
+
+  <section class="card">
+    <h2>รถ</h2>
+    <div class="grid">
+      <label class="field span2">รุ่นรถ <input id="model" placeholder="เช่น Tesla Model 3"></label>
+      <label class="field">ความจุแบต (kWh) <input id="capacity" type="number" step="0.1" min="0" inputmode="decimal"></label>
+      <label class="field">ราคาชาร์จ DC (฿/kWh) <input id="dcPrice" type="number" step="0.01" min="0" inputmode="decimal"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>บันทึกใหม่</h2>
+    <form id="form" autocomplete="off">
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="event" value="start" checked>จุดเริ่มต้น</label>
+        <label><input type="radio" name="event" value="drive">ระหว่างทาง</label>
+        <label><input type="radio" name="event" value="charge">ชาร์จ DC</label>
+      </div>
+
+      <div class="grid">
+        <label class="field span2">เวลา <input id="time" type="datetime-local" required></label>
+        <label class="field">เลขไมล์ (km) <input id="odo" type="number" step="0.1" min="0" inputmode="decimal" required></label>
+        <label class="field"><span id="socLabel">แบต (%)</span> <input id="soc" type="number" step="0.1" min="0" max="100" inputmode="decimal" required></label>
+        <label class="field">ระยะที่เหลือบนจอ (km) <input id="range" type="number" step="0.1" min="0" inputmode="decimal"></label>
+        <label class="field">Trip meter (km) <input id="trip" type="number" step="0.1" min="0" inputmode="decimal"></label>
+        <label class="field span2">โหมดขับ <input id="mode" list="modes" placeholder="Eco / Normal / Sport"></label>
+      </div>
+      <datalist id="modes"><option>Eco</option><option>Normal</option><option>Sport</option><option>Comfort</option><option>Snow</option></datalist>
+
+      <div id="chargeFields" class="grid" style="margin-top:12px" hidden>
+        <label class="field">แบต (%) หลังชาร์จ <input id="socAfter" type="number" step="0.1" min="0" max="100" inputmode="decimal"></label>
+        <label class="field">kWh ที่ตู้แจ้ง (ถ้ามี) <input id="kwh" type="number" step="0.01" min="0" inputmode="decimal"></label>
+        <label class="field span2">ค่าชาร์จ ฿ (ถ้ามี) <input id="cost" type="number" step="0.01" min="0" inputmode="decimal"></label>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
+        <label class="field span2">หมายเหตุ <input id="note" placeholder="ไม่บังคับ"></label>
+      </div>
+
+      <div style="margin-top:14px"><button type="submit">บันทึก</button></div>
+      <p id="formMsg" class="hint" style="margin-top:8px"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>สรุป</h2>
+    <p id="last" class="hint" style="margin-bottom:12px"></p>
+    <div id="tiles" class="tiles"></div>
+    <div id="rows" class="rows"></div>
+    <p id="missing" class="hint" style="margin-top:10px" hidden></p>
+  </section>
+
+  <section class="card">
+    <h2>แยกตามโหมดขับ</h2>
+    <div id="modesBody" class="rows"></div>
+  </section>
+
+  <section class="card">
+    <h2>ประวัติ</h2>
+    <div id="entries" class="entries"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const E = { start: 'จุดเริ่มต้น', drive: 'ระหว่างทาง', charge: 'ชาร์จ DC' };
+const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
+const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '-' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d }));
+const sum = a => a.reduce((x, y) => x + y, 0);
+const avg = a => (a.length ? sum(a) / a.length : null);
+const fmtTime = ts => new Date(ts).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+
+let D = { entries: [], settings: {} };
+let saveTimer = null;
+
+// ---------- calculation ----------
+function analyze(entries, st) {
+  const cap = num(st.capacity) || 0;
+  const price = num(st.dcPrice);
+  const sorted = entries
+    .filter(e => num(e.odo) !== null && num(e.soc) !== null)
+    .sort((a, b) => new Date(a.ts) - new Date(b.ts) || a.odo - b.odo);
+
+  const segs = [], ch = [], warn = {};
+  const w = (id, m) => (warn[id] = warn[id] || []).push(m);
+  let state = null;
+
+  for (const e of sorted) {
+    const odo = num(e.odo), soc = num(e.soc);
+    if (state) {
+      const km = odo - state.odo, drop = state.soc - soc;
+      if (km < 0) w(e.id, 'เลขไมล์น้อยกว่าบันทึกก่อนหน้า');
+      if (km > 0) {
+        if (drop < 0) w(e.id, 'แบตเพิ่มขึ้นระหว่างวิ่ง จึงไม่คิดอัตราการใช้ไฟ');
+        const valid = drop >= 0 && cap > 0;
+        const kwh = cap > 0 ? (drop / 100) * cap : null;
+        segs.push({
+          id: e.id, km, kwh, mode: e.mode || '', valid,
+          cons: valid ? (kwh / km) * 100 : null,
+          actualFull: drop > 0 ? (km / drop) * 100 : null,
+          screenFull: state.range != null && state.soc > 0 ? (state.range / state.soc) * 100 : null,
+        });
+      }
+    }
+    if (e.event === 'charge') {
+      const sa = num(e.socAfter), kin = num(e.kwh);
+      const gained = cap > 0 && sa !== null ? ((sa - soc) / 100) * cap : null;
+      if (sa !== null && sa <= soc) w(e.id, 'แบตหลังชาร์จต้องมากกว่าก่อนชาร์จ');
+      const kwh = kin !== null ? kin : gained;
+      const cin = num(e.cost);
+      const cost = cin !== null ? cin : (kwh !== null && price !== null ? kwh * price : null);
+      ch.push({ id: e.id, kwh, manual: kin !== null, gained, cost });
+      state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts };
+    } else {
+      state = { odo, soc, range: num(e.range), ts: e.ts };
+    }
+  }
+
+  const totalKm = sum(segs.map(s => s.km));
+  const eSegs = segs.filter(s => s.valid);
+  const ekm = sum(eSegs.map(s => s.km));
+  const ekwh = sum(eSegs.map(s => s.kwh));
+  const withCost = ch.filter(c => c.cost !== null);
+  const totalCost = sum(withCost.map(c => c.cost));
+  const chKwh = sum(ch.filter(c => c.kwh !== null).map(c => c.kwh));
+  const priced = ch.filter(c => c.cost !== null && c.kwh > 0);
+  const avgPrice = priced.length ? sum(priced.map(c => c.cost)) / sum(priced.map(c => c.kwh)) : null;
+  const avgCons = ekm > 0 ? (ekwh / ekm) * 100 : null;
+  const manual = ch.filter(c => c.manual && c.gained !== null && c.kwh > 0);
+  const eff = manual.length ? sum(manual.map(c => c.gained)) / sum(manual.map(c => c.kwh)) : null;
+  const cmp = segs.filter(s => s.screenFull !== null && s.actualFull !== null);
+  const screenAvg = avg(cmp.map(s => s.screenFull));
+  const actualAvg = avg(cmp.map(s => s.actualFull));
+
+  const modeMap = {};
+  for (const s of eSegs) {
+    const k = s.mode || 'ไม่ระบุ';
+    const m = (modeMap[k] = modeMap[k] || { mode: k, km: 0, kwh: 0 });
+    m.km += s.km; m.kwh += s.kwh;
+  }
+  const byMode = Object.values(modeMap)
+    .map(m => ({ ...m, cons: m.km > 0 ? (m.kwh / m.km) * 100 : null }))
+    .sort((a, b) => b.km - a.km);
+
+  const segById = {}, chById = {};
+  segs.forEach(s => segById[s.id] = s);
+  ch.forEach(c => chById[c.id] = c);
+
+  return {
+    warn, segById, chById, byMode,
+    t: {
+      totalKm, energyKwh: ekwh, avgCons, chKwh, totalCost,
+      missing: ch.length - withCost.length, avgPrice,
+      costPerKm: totalKm > 0 && withCost.length ? totalCost / totalKm : null,
+      estCostPerKm: avgCons !== null && avgPrice !== null ? (avgCons / 100) * avgPrice : null,
+      eff, screenAvg, actualAvg,
+      gapPct: screenAvg && actualAvg ? ((screenAvg - actualAvg) / actualAvg) * 100 : null,
+    },
+  };
+}
+
+// ---------- server ----------
+function setStatus(t) { $('status').textContent = t; }
+function onData(d) { D = d; setStatus(''); renderAll(); }
+function onErr(err) { setStatus('ผิดพลาด: ' + (err && err.message ? err.message : err)); }
+function load() { setStatus('กำลังโหลด...'); google.script.run.withSuccessHandler(onData).withFailureHandler(onErr).getData(); }
+
+// ---------- form ----------
+function eventType() { return document.querySelector('input[name=event]:checked').value; }
+function updateEventUI() {
+  const isCharge = eventType() === 'charge';
+  $('chargeFields').hidden = !isCharge;
+  $('socLabel').textContent = isCharge ? 'แบต (%) ก่อนชาร์จ' : 'แบต (%)';
+  $('socAfter').required = isCharge;
+}
+document.querySelectorAll('input[name=event]').forEach(r => r.addEventListener('change', updateEventUI));
+
+function nowLocal() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+function resetForm() {
+  ['odo', 'soc', 'range', 'trip', 'socAfter', 'kwh', 'cost', 'note'].forEach(id => ($(id).value = ''));
+  $('time').value = nowLocal();
+  updateEventUI();
+}
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const type = eventType();
+  const v = id => $(id).value.trim();
+  const ts = new Date(v('time'));
+  const soc = num(v('soc'));
+  const msg = t => ($('formMsg').textContent = t);
+  if (isNaN(ts)) return msg('กรุณาใส่เวลา');
+  if (num(v('odo')) === null) return msg('กรุณาใส่เลขไมล์');
+  if (soc === null || soc < 0 || soc > 100) return msg('แบตต้องอยู่ระหว่าง 0 ถึง 100');
+
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    ts: ts.toISOString(), event: type,
+    odo: num(v('odo')), soc,
+    range: v('range') === '' ? '' : num(v('range')),
+    trip: v('trip') === '' ? '' : num(v('trip')),
+    mode: v('mode'), note: v('note'),
+    socAfter: '', kwh: '', cost: '',
+  };
+  if (type === 'charge') {
+    const sa = num(v('socAfter'));
+    if (sa === null || sa <= soc || sa > 100) return msg('แบตหลังชาร์จต้องมากกว่าก่อนชาร์จและไม่เกิน 100');
+    entry.socAfter = sa;
+    entry.kwh = v('kwh') === '' ? '' : num(v('kwh'));
+    entry.cost = v('cost') === '' ? '' : num(v('cost'));
+  }
+
+  msg('กำลังบันทึก...');
+  google.script.run
+    .withSuccessHandler(d => { onData(d); msg('บันทึกแล้ว'); resetForm(); })
+    .withFailureHandler(err => msg('บันทึกไม่สำเร็จ: ' + err.message))
+    .addEntry(entry);
+});
+
+// ---------- settings ----------
+['model', 'capacity', 'dcPrice'].forEach(id => $(id).addEventListener('input', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    google.script.run.withSuccessHandler(onData).withFailureHandler(onErr).saveSettings({
+      model: $('model').value, capacity: $('capacity').value, dcPrice: $('dcPrice').value,
+    });
+  }, 800);
+}));
+
+// ---------- render ----------
+function renderAll() {
+  const s = D.settings || {};
+  ['model', 'capacity', 'dcPrice'].forEach(id => {
+    if (document.activeElement !== $(id)) $(id).value = s[id] || '';
+  });
+  if (!$('time').value) resetForm();
+
+  const res = analyze(D.entries, s);
+  const t = res.t;
+  const sorted = [...D.entries].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const last = sorted[0];
+
+  $('last').textContent = last
+    ? `ล่าสุด ${fmtTime(last.ts)} · ไมล์ ${f(last.odo, 1)} km · แบต ${f(last.event === 'charge' && last.socAfter !== null ? last.socAfter : last.soc, 1)}%`
+    : 'ยังไม่มีบันทึก';
+  if (last) $('odo').placeholder = 'ล่าสุด ' + f(last.odo, 1);
+
+  $('tiles').innerHTML = [
+    ['ระยะรวม', 'km', f(t.totalKm, 1)],
+    ['อัตราใช้ไฟ', 'kWh/100 km', f(t.avgCons, 1)],
+    ['ค่าไฟต่อ km', '฿/km', f(t.estCostPerKm, 2)],
+    ['ประสิทธิภาพชาร์จ', '%', t.eff === null ? '-' : f(t.eff * 100, 0)],
+  ].map(([k, u, v]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="u">${u}</div></div>`).join('');
+
+  $('rows').innerHTML = [
+    ['พลังงานจากแบตที่ใช้', 'kWh', f(t.energyKwh, 2)],
+    ['ชาร์จรวม', 'kWh', f(t.chKwh, 2)],
+    ['ค่าชาร์จรวม', '฿', f(t.totalCost, 0)],
+    ['ค่าใช้จ่ายจริงต่อ km', '฿', f(t.costPerKm, 2)],
+    ['ระยะเต็มแบตตามจอ', 'km', f(t.screenAvg, 0)],
+    ['ระยะเต็มแบตจริง', 'km', f(t.actualAvg, 0)],
+    ['ต่างจากจอ', '%', t.gapPct === null ? '-' : f(t.gapPct, 1)],
+  ].map(([k, u, v]) => `<div>${k}<span class="unit">${u}</span></div><div class="val">${v}</div>`).join('');
+
+  $('missing').hidden = t.missing === 0;
+  $('missing').textContent = `มี ${t.missing} ครั้งที่ไม่มีค่าชาร์จ จึงไม่รวมในค่าใช้จ่าย`;
+
+  $('modesBody').innerHTML = res.byMode.length
+    ? res.byMode.map(m => `<div>${m.mode}<span class="unit">${f(m.km, 1)} km</span></div><div class="val">${f(m.cons, 2)}<span class="unit">kWh/100 km</span></div>`).join('')
+    : '<div class="empty" style="grid-column:1/-1">ยังไม่มีข้อมูล</div>';
+
+  $('entries').innerHTML = sorted.length
+    ? sorted.map(e => entryCard(e, res)).join('')
+    : '<div class="empty">ยังไม่มีบันทึก</div>';
+}
+
+function entryCard(e, res) {
+  const seg = res.segById[e.id], c = res.chById[e.id];
+  const socTxt = e.event === 'charge' && e.socAfter !== null ? `${f(e.soc, 1)} → ${f(e.socAfter, 1)}%` : `${f(e.soc, 1)}%`;
+  const lines = [];
+  if (seg) {
+    lines.push(`วิ่ง ${f(seg.km, 1)} km` + (seg.kwh !== null ? ` · ใช้ ${f(seg.kwh, 2)} kWh` : '') + (seg.cons !== null ? ` · ${f(seg.cons, 1)} kWh/100km` : ''));
+    if (seg.screenFull !== null && seg.actualFull !== null) {
+      lines.push(`ระยะเต็มแบต จอ ${f(seg.screenFull, 0)} km · จริง ${f(seg.actualFull, 0)} km`);
+    }
+  }
+  if (c) lines.push(`ชาร์จ ${c.kwh !== null ? f(c.kwh, 2) + ' kWh' : '-'}` + (c.cost !== null ? ` · ${f(c.cost, 0)} ฿` : ''));
+
+  const meta = [];
+  if (e.range !== null) meta.push(`จอ ${f(e.range, 1)} km`);
+  if (e.trip !== null) meta.push(`Trip ${f(e.trip, 1)} km`);
+  if (e.mode) meta.push(e.mode);
+  if (e.note) meta.push(e.note);
+
+  const warns = res.warn[e.id];
+  return `<div class="entry">
+    <div class="head"><span class="tag">${E[e.event] || e.event}</span>${fmtTime(e.ts)}</div>
+    <div class="line">${f(e.odo, 1)} km · แบต ${socTxt}</div>
+    ${lines.map(l => `<div class="meta">${l}</div>`).join('')}
+    ${meta.length ? `<div class="meta">${meta.join(' · ')}</div>` : ''}
+    ${warns ? `<div class="meta" style="color:#111;font-weight:600">คำเตือน: ${warns.join(', ')}</div>` : ''}
+    <div class="foot"><button class="text" data-id="${e.id}">ลบรายการนี้</button></div>
+  </div>`;
+}
+
+$('entries').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  if (!btn.dataset.armed) {
+    btn.dataset.armed = '1';
+    btn.textContent = 'กดอีกครั้งเพื่อยืนยัน';
+    setTimeout(() => { delete btn.dataset.armed; btn.textContent = 'ลบรายการนี้'; }, 3000);
+    return;
+  }
+  setStatus('กำลังลบ...');
+  google.script.run.withSuccessHandler(onData).withFailureHandler(onErr).deleteEntry(btn.dataset.id);
+});
+
+resetForm();
+load();
+</script>
+</body>
+</html>

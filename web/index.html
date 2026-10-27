@@ -319,6 +319,8 @@
   .li.charge .li-h b { color: var(--charge); }
   .li-kind { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--drive); margin-bottom: 4px; }
   .li.charge .li-kind { color: var(--charge); }
+  .li.rest { border-left-color: #c4b5fd; }
+  .li.rest .li-kind { color: #c4b5fd; }
   .empty { padding: 26px 18px; text-align: center; color: var(--muted); font-size: 14px; }
 
   /* ---------- เส้นทาง ---------- */
@@ -347,6 +349,7 @@
   .rx { font-size: 12.5px; color: var(--text-2); margin-top: 3px; overflow-wrap: anywhere; }
 
   /* ---------- toast ---------- */
+  .fsel { display: block; width: 100%; height: 46px; padding: 0 12px; background: var(--surface-3); color: var(--text); border: 1px solid transparent; border-radius: 12px; font-size: 16px; appearance: none; -webkit-appearance: none; }
   .trip-bar { display: flex; gap: 8px; padding: 14px 18px 0; align-items: center; }
   .trip-bar select { flex: 1; min-width: 0; margin: 0; }
   .busy { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(0,0,0,.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
@@ -425,6 +428,7 @@
             <label><input type="radio" name="event" value="drive">🛣️ ระหว่างทาง</label>
             <label class="ev-only"><input type="radio" name="event" value="chargeStart">🔌 ถึงจุดชาร์จ</label>
             <label class="ev-only"><input type="radio" name="event" value="chargeEnd">🔋 ชาร์จเสร็จ</label>
+            <label><input type="radio" name="event" value="rest">☕ พัก</label>
             <label><input type="radio" name="event" value="end">🏁 สิ้นสุด</label>
           </div>
 
@@ -447,10 +451,9 @@
             </label>
             <label class="field" id="wrapMode">
               <span class="lab">โหมดขับ</span>
-              <input id="mode" list="modes" placeholder="Eco">
+              <select id="mode" class="fsel"><option>Normal</option><option>Eco</option><option>Sport</option></select>
             </label>
           </div>
-          <datalist id="modes"><option>Eco</option><option>Normal</option><option>Sport</option><option>Comfort</option><option>Snow</option></datalist>
 
           <div id="chargeFields" class="grid ev-only" style="margin-top:14px" hidden>
             <label class="field">
@@ -637,14 +640,14 @@ const UNIT = {
   ev:   { cons: 'kWh/100km', en: 'kWh', name: 'EV Tracker', noCar: 'รถไฟฟ้าของฉัน' },
   fuel: { cons: 'L/100km',   en: 'ลิตร', name: 'Fuel Tracker', noCar: 'รถน้ำมันของฉัน' },
 };
-const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ', refuel: 'เติมน้ำมัน' };
+const LABEL = { start: 'เริ่มต้น', drive: 'ระหว่างทาง', chargeStart: 'ถึงจุดชาร์จ', chargeEnd: 'ชาร์จเสร็จ', end: 'สิ้นสุดทริป', charge: 'ชาร์จ', refuel: 'เติมน้ำมัน', rest: 'พักระหว่างทาง' };
 const stepName = (ev, no) => {
   if (ev === 'chargeStart') return `ถึงจุดชาร์จที่ ${no}`;
   if (ev === 'chargeEnd' || ev === 'charge') return `ชาร์จจุดที่ ${no}`;
   if (ev === 'refuel') return `เติมน้ำมันครั้งที่ ${no}`;
   return LABEL[ev] || ev;
 };
-const EV_COLOR = { start: '#6ee7b7', drive: '#7dd3fc', chargeStart: '#fcd34d', chargeEnd: '#f5b942', charge: '#f5b942', refuel: '#fcd34d', end: '#fda4af' };
+const EV_COLOR = { start: '#6ee7b7', drive: '#7dd3fc', chargeStart: '#fcd34d', chargeEnd: '#f5b942', chargeStop: '#f5b942', charge: '#f5b942', refuel: '#fcd34d', rest: '#c4b5fd', end: '#fda4af' };
 const num = v => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
 const f = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : Number(v).toLocaleString('th-TH', { maximumFractionDigits: d, minimumFractionDigits: 0 }));
 const sum = a => a.reduce((x, y) => x + y, 0);
@@ -752,10 +755,11 @@ function groupTrips(entries) {
 }
 
 // สรุปทริปจากช่วงและรายการเติม/ชาร์จที่อยู่ในทริปนั้น
-function buildTrips(list, segs, refs) {
+function buildTrips(list, segs, refs, rests = []) {
   return groupTrips(list).map(g => {
     const ids = new Set(g.map(e => e.id));
     const ss = segs.filter(s => ids.has(s.id));
+    const rs = rests.filter(r => ids.has(r.id));
     const rr = refs.filter(r => ids.has(r.id));
     const valid = ss.filter(s => s.valid);
     const km = sum(ss.map(s => s.km));
@@ -768,6 +772,8 @@ function buildTrips(list, segs, refs) {
       startTs: first,
       minutes: (new Date(last) - new Date(first)) / 60000,
       km, used,
+      driveMin: sum(ss.map(s => s.minutes)),
+      restMin: sum(rs.map(r => r.minutes)),
       cons: vkm > 0 ? (used / vkm) * 100 : null,
       charges: rr.length,
       chEn: sum(rr.filter(r => r.en !== null).map(r => r.en)),
@@ -799,6 +805,7 @@ function analyzeEV(entries, st) {
     .sort((a, b) => new Date(a.ts) - new Date(b.ts) || (num(a.odo) || 0) - (num(b.odo) || 0));
 
   const segs = [], ch = [], warn = {}, noById = {}, segById = {}, chById = {};
+  const rests = [], restById = {};
   const w = (id, m) => { (warn[id] = warn[id] || []).push(m); };
   let state = null, pending = null, chargeNo = 0;
 
@@ -832,7 +839,12 @@ function analyzeEV(entries, st) {
     if (state) {
       const km = odo - state.odo, drop = state.soc - soc;
       if (km < 0) w(e.id, 'ไมล์ลดลง');
-      if (km > 0) {
+      if (state.event === 'rest') {
+        // ช่วงพัก: นับเป็นเวลาพัก ไม่นับเป็นเวลาขับ
+        const mins = (new Date(e.ts) - new Date(state.ts)) / 60000;
+        rests.push({ id: e.id, startTs: state.ts, ts: e.ts, minutes: mins });
+        restById[e.id] = mins;
+      } else if (km > 0) {
         if (drop < 0) w(e.id, 'แบตเพิ่มระหว่างวิ่ง');
         const valid = drop >= 0 && cap > 0;
         const en = cap > 0 ? (drop / 100) * cap : null;
@@ -871,7 +883,7 @@ function analyzeEV(entries, st) {
     }
   }
 
-  const trips = buildTrips(sorted, segs, ch);
+  const trips = buildTrips(sorted, segs, ch, rests);
   const totalKm = sum(segs.map(s => s.km));
   const driveMin = sum(segs.map(s => s.minutes));
   const valid = segs.filter(s => s.valid);
@@ -895,7 +907,7 @@ function analyzeEV(entries, st) {
   segs.forEach(s => { s.costPerKm = s.cons !== null && legPrice !== null ? (s.cons / 100) * legPrice : null; });
 
   return {
-    segs, ch, warn, segById, chById, noById, trips,
+    segs, ch, warn, segById, chById, noById, trips, rests, restById,
     byMode: byModeOf(segs),
     points: segs.filter(s => s.cons !== null).map(s => ({ cons: s.cons, to: s.to })),
     t: {
@@ -919,6 +931,7 @@ function analyzeFuel(entries) {
     .sort((a, b) => new Date(a.ts) - new Date(b.ts) || num(a.odo) - num(b.odo));
 
   const segs = [], refs = [], warn = {}, noById = {}, segById = {}, chById = {};
+  const rests = [], restById = {};
   const intervals = [];
   let state = null, anchor = null, accL = 0, pendingLegs = [], refNo = 0;
 
@@ -931,7 +944,11 @@ function analyzeFuel(entries) {
     if (state) {
       const km = odo - state.odo;
       if (km < 0) warn[e.id] = ['ไมล์ลดลง'];
-      if (km > 0) {
+      if (state.event === 'rest') {
+        const mins = (new Date(e.ts) - new Date(state.ts)) / 60000;
+        rests.push({ id: e.id, startTs: state.ts, ts: e.ts, minutes: mins });
+        restById[e.id] = mins;
+      } else if (km > 0) {
         const seg = {
           id: e.id,
           from: { ts: state.ts, odo: state.odo, event: state.event, no: state.no },
@@ -983,7 +1000,7 @@ function analyzeFuel(entries) {
       if (!s.valid) { s.cons = avgCons; s.en = (s.km * avgCons) / 100; s.valid = true; s.est = true; }
     });
   }
-  const trips = buildTrips(sorted, segs, refs);
+  const trips = buildTrips(sorted, segs, refs, rests);
   const totalKm = sum(segs.map(s => s.km));
   const driveMin = sum(segs.map(s => s.minutes));
   const usedEn = sum(segs.filter(s => s.valid).map(s => s.en));
@@ -996,7 +1013,7 @@ function analyzeFuel(entries) {
   segs.forEach(s => { s.costPerKm = s.cons !== null && avgPrice !== null ? (s.cons / 100) * avgPrice : null; });
 
   return {
-    segs, ch: refs, warn, segById, chById, noById, trips,
+    segs, ch: refs, warn, segById, chById, noById, trips, rests, restById,
     byMode: byModeOf(segs),
     points: segs.filter(s => s.cons !== null).map(s => ({ cons: s.cons, to: s.to })),
     t: {
@@ -1019,7 +1036,8 @@ function updateEventUI() {
   $('wrapOdo').hidden = isEnd;
   $('odo').required = !isEnd;
   $('wrapRange').hidden = isEnd;
-  $('wrapMode').hidden = isEnd;
+  // โหมดเป็นของช่วงที่ขับมาถึงจุดนี้ จึงซ่อนในจุดที่ไม่มีการขับเข้ามา
+  $('wrapMode').hidden = isEnd || t === 'start' || t === 'rest';
   $('chargeFields').hidden = !isEnd;
   $('fuelFields').hidden = !$('hasFuel').checked;
   $('socLabel').textContent = t === 'chargeStart' ? 'แบตก่อนชาร์จ' : isEnd ? 'แบตหลังชาร์จ' : 'แบต';
@@ -1027,10 +1045,21 @@ function updateEventUI() {
 form.querySelectorAll('input[name=event]').forEach(r => r.addEventListener('change', updateEventUI));
 $('hasFuel').addEventListener('change', updateEventUI);
 
+// โหมดเริ่มต้น: ใช้โหมดล่าสุดในทริปเดียวกัน ถ้าเพิ่งเริ่มทริปใหม่ (หลังสิ้นสุด) ใช้ Normal
+function defaultMode() {
+  const list = [...myEntries()].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  for (const e of list) {
+    if (e.event === 'end') break;
+    if (e.mode) return e.mode;
+  }
+  return 'Normal';
+}
+
 function resetForm() {
   ['odo', 'soc', 'range', 'trip', 'kwh', 'cost', 'fcost', 'liters', 'note'].forEach(id => ($(id).value = ''));
   $('full').checked = false;
   $('hasFuel').checked = false;
+  $('mode').value = defaultMode();
   $('time').value = nowLocal();
   updateEventUI();
   refreshPlaceholders();
@@ -1067,7 +1096,7 @@ form.addEventListener('submit', async e => {
     const odo = num(v('odo'));
     if (odo === null) return msg('กรุณาใส่เลขไมล์', true);
     entry.odo = odo;
-    entry.mode = v('mode');
+    entry.mode = ['start', 'rest'].includes(type) ? '' : $('mode').value;
     if (V === 'ev') entry.range = v('range') === '' ? '' : num(v('range'));
   }
   if (type === 'chargeEnd') {
@@ -1158,8 +1187,9 @@ function groupStats(group, res) {
   const costed = cs.filter(c => c.cost !== null);
   const cost = costed.length ? sum(costed.map(c => c.cost)) : null;
   const cmp = ss.filter(s => s.screenFull != null && s.actualFull != null);
+  const rs = res.rests.filter(r => ids.has(r.id));
   return {
-    km, mins: sum(ss.map(s => s.minutes)), used, cons,
+    km, mins: sum(ss.map(s => s.minutes)), restMin: sum(rs.map(r => r.minutes)), used, cons,
     chEn: sum(cs.filter(c => c.en !== null).map(c => c.en)),
     chMin: V === 'ev' ? sum(cs.map(c => c.minutes)) : null,
     cost,
@@ -1240,7 +1270,9 @@ function render() {
       : (gap >= 0 ? 'จอแสดงระยะสูงกว่าจริง ' : 'จอแสดงระยะต่ำกว่าจริง ') + f(Math.abs(gap), 1) + '%'
         + (gs.missing ? ` · ไม่มีค่าชาร์จ ${gs.missing} ครั้ง` : '');
   }
-  $('timeLine').textContent = '';
+  $('timeLine').innerHTML = group.length
+    ? `ขับ <b>${fmtDur(gs.mins)}</b> · พัก <b>${fmtDur(gs.restMin)}</b>` + (V === 'ev' ? ` · ชาร์จ <b>${fmtDur(gs.chMin)}</b>` : '')
+    : '';
 
   renderChart(res.points.filter(p => firstTs && p.to.ts >= firstTs && p.to.ts <= lastTs));
   renderRoute(res, group);
@@ -1289,7 +1321,7 @@ function renderTrips(trips) {
         return `
       <div class="trip">
         <div class="trip-h">
-          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'} · ${fmtDur(tr.minutes)}</span></div>
+          <div><b>ทริป ${n}</b><span>${tr.startTs ? fmtDate(tr.startTs) : '–'} · ขับ ${fmtDur(tr.driveMin)} · พัก ${fmtDur(tr.restMin)}</span></div>
           <span class="tag ${tr.ended ? 'dc' : ''}">${tr.ended ? 'สิ้นสุด' : 'ยังไม่จบ'}</span>
         </div>
         <div class="kv">
@@ -1424,6 +1456,15 @@ function chHtml(c) {
     </div>`;
 }
 
+function restHtml(r) {
+  return `
+    <div class="li rest">
+      <div class="li-kind">☕ พัก</div>
+      <div class="li-h"><b>พักระหว่างทาง</b><span>${fmtTime(r.startTs)} – ${fmtTime(r.ts)}</span></div>
+      <div class="kv"><div><span>เวลาพัก</span><b>${fmtDur(r.minutes)}</b></div></div>
+    </div>`;
+}
+
 function renderLegs(res, group, gs) {
   const u = U();
   const ids = new Set(group.map(e => e.id));
@@ -1433,6 +1474,7 @@ function renderLegs(res, group, gs) {
   const items = [
     ...res.segs.filter(s => ids.has(s.id) && s.km > 0).map(s => ({ ts: s.to.ts, html: legHtml(s) })),
     ...res.ch.filter(c => ids.has(c.id)).map(c => ({ ts: c.ts, html: chHtml(c) })),
+    ...res.rests.filter(r => ids.has(r.id)).map(r => ({ ts: r.ts, html: restHtml(r) })),
   ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
   $('legCount').textContent = items.length ? `${items.length} รายการ` : '';
   $('legs').innerHTML = items.length
@@ -1464,12 +1506,20 @@ function routeSummary(group, res) {
 // ข้อความรายละเอียดของแต่ละจุด (ใช้ทั้งรายการและป๊อปอัพบนแผนที่)
 function detailLines(p, res) {
   const u = U();
-  const seg = res.segById[p.id], c = res.chById[p.id], no = res.noById[p.id];
+  const isStop = p.event === 'chargeStop';
+  const endE = p.endEntry;
+  const seg = res.segById[p.id];
+  const c = res.chById[isStop ? endE.id : p.id];
+  const no = res.noById[isStop ? endE.id : p.id];
+  const rest = res.restById[p.id];
   const odo = num(p.odo), soc = num(p.soc);
-  const title = stepName(p.event, no);
-  const sub = [fmtTime(p.ts), odo !== null ? `${f(odo, 1)} km` : null, soc !== null ? `แบต ${f(soc, 0)}%` : null]
-    .filter(Boolean).join(' · ');
+  const title = isStop ? stepName('chargeEnd', no) : stepName(p.event, no);
+  const sub = isStop
+    ? `${fmtTime(p.ts)} – ${fmtTime(endE.ts)} · แบต ${f(soc, 0)}% → ${f(num(endE.soc), 0)}%`
+    : [fmtTime(p.ts), odo !== null ? `${f(odo, 1)} km` : null, soc !== null ? `แบต ${f(soc, 0)}%` : null]
+        .filter(Boolean).join(' · ');
   const extra = [];
+  if (rest !== undefined) extra.push(`พักก่อนหน้า ${fmtDur(rest)}`);
   if (seg) extra.push(`ช่วงก่อนหน้า ${f(seg.km, 1)} km · ${fmtDur(seg.minutes)}` + (seg.cons !== null ? ` · ${f(seg.cons, 1)} ${u.cons}` : ''));
   if (c) extra.push(`${V === 'ev' ? 'ชาร์จ' : 'เติม'} ${c.en !== null ? f(c.en, 2) + ' ' + u.en : '–'}`
     + (c.minutes !== null ? ` · ${fmtDur(c.minutes)}` : '')
@@ -1477,12 +1527,27 @@ function detailLines(p, res) {
   return { title, sub, extra };
 }
 
+// รวม "ถึงจุดชาร์จ" กับ "ชาร์จเสร็จ" ที่ติดกันเป็นหมุดเดียว (แวะที่จุดเดียวกัน)
+function stopsOf(group) {
+  const out = [];
+  for (let i = 0; i < group.length; i++) {
+    const e = group[i], nx = group[i + 1];
+    if (e.event === 'chargeStart' && nx && nx.event === 'chargeEnd') {
+      out.push({ ...e, event: 'chargeStop', endEntry: nx });
+      i++;
+    } else {
+      out.push(e);
+    }
+  }
+  return out;
+}
+
 function renderRoute(res, group) {
-  const pts = group.filter(e => num(e.lat) !== null && num(e.lng) !== null);
+  const pts = stopsOf(group).filter(e => num(e.lat) !== null && num(e.lng) !== null);
   $('routeBody').innerHTML = !group.length
     ? '<div class="empty">ยังไม่มีทริป</div>'
     : pts.length
-      ? routeSummary(group, res) + '<div id="routeMap" class="route-map"></div>' + routeList(group, res)
+      ? routeSummary(group, res) + '<div id="routeMap" class="route-map"></div>' + routeList(stopsOf(group), res)
       : '<div class="empty">ทริปนี้ยังไม่มีพิกัด GPS<br>บันทึกใหม่หลังอนุญาตตำแหน่งแล้วจะขึ้นเส้นทาง</div>';
   if (pts.length) showRoute(pts, res);
 }

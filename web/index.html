@@ -423,6 +423,7 @@
       <div class="card-h"><h2 class="k-sky" data-ico="✏️">บันทึกใหม่</h2></div>
       <div class="card-b">
         <form id="form" autocomplete="off">
+          <div style="margin-bottom:12px"><button id="resumeBtn" class="btn" type="button" hidden>▶️ เดินทางต่อ</button></div>
           <div class="seg" role="radiogroup" aria-label="ประเภทการบันทึก">
             <label><input type="radio" name="event" value="start" checked>▶️ เริ่มต้น</label>
             <label><input type="radio" name="event" value="drive">🛣️ ระหว่างทาง</label>
@@ -714,9 +715,29 @@ function toast(text, isErr) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
 }
+/* ปุ่ม "เดินทางต่อ": แสดงเมื่อรายการล่าสุดของรถคันนี้เป็น "พัก"
+   กดแล้วบันทึกเป็น "ระหว่างทาง" ที่เวลาปัจจุบัน โดยใช้ไมล์และแบตจากจุดพัก */
+function updateResume() {
+  const last = [...myEntries()].sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
+  $('resumeBtn').hidden = !(last && last.event === 'rest');
+}
+$('resumeBtn').addEventListener('click', () => {
+  if (busy) return;
+  const last = [...myEntries()].sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
+  if (!last || last.event !== 'rest') return;
+  form.querySelector('input[name=event][value=drive]').checked = true;
+  updateEventUI();
+  $('time').value = nowLocal();
+  $('odo').value = last.odo ?? '';
+  if (V === 'ev') $('soc').value = last.soc ?? '';
+  $('mode').value = defaultMode();
+  form.requestSubmit();
+});
+
 function applyData(d) {
   D = d;
   render();
+  updateResume();
   setSync('ซิงก์ ' + fmtTime(new Date()));
 }
 async function load() {
@@ -772,6 +793,7 @@ function buildTrips(list, segs, refs, rests = []) {
       startTs: first,
       minutes: (new Date(last) - new Date(first)) / 60000,
       km, used,
+      firstId: g[0].id,
       driveMin: sum(ss.map(s => s.minutes)),
       restMin: sum(rs.map(r => r.minutes)),
       cons: vkm > 0 ? (used / vkm) * 100 : null,
@@ -1330,6 +1352,7 @@ function renderTrips(trips) {
           <div><span>${V === 'ev' ? 'พลังงานที่ใช้' : 'น้ำมันที่ใช้ (ประมาณ)'}</span><b>${f(tr.used, 2)} ${u.en}</b></div>
           <div><span>${V === 'ev' ? 'ชาร์จ' : 'เติม'}</span><b>${tr.charges} ครั้ง · ${f(tr.chEn, 1)} ${u.en}</b></div>
           <div><span>ค่าใช้จ่าย</span><b>${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}</b></div>
+          <div style="grid-column:1/-1;background:none;border:0;padding:4px 0 0"><button class="del tdel" data-id="${esc(tr.firstId)}" type="button">🗑️ ลบทริปนี้</button></div>
         </div>
       </div>`;
       }).join('')
@@ -1351,6 +1374,30 @@ function tripSummaryText(trips) {
     ].join('\n');
   }).join('\n\n');
 }
+
+/* ---------- ลบทริปจากรายการทริป (กดสองครั้งเพื่อยืนยัน) ---------- */
+$('trips').addEventListener('click', async e => {
+  const btn = e.target.closest('button.tdel');
+  if (!btn || busy) return;
+  if (!btn.dataset.armed) {
+    btn.dataset.armed = '1';
+    btn.textContent = 'กดอีกครั้งเพื่อลบ';
+    setTimeout(() => { delete btn.dataset.armed; btn.textContent = '🗑️ ลบทริปนี้'; }, 3000);
+    return;
+  }
+  delete btn.dataset.armed;
+  const g = groupTrips(myEntries()).find(x => x[0].id === btn.dataset.id);
+  if (!g) return toast('ไม่พบทริปนี้', true);
+  busy = true;
+  try {
+    const data = await busyCall('กำลังลบทริป…', () => apiPost({ action: 'deleteMany', ids: g.map(x => x.id) }));
+    selIdx = null;
+    applyData(data);
+    toast('ลบทริปแล้ว');
+  } catch (err) {
+    toast('ลบทริปไม่สำเร็จ', true);
+  } finally { busy = false; }
+});
 
 document.addEventListener('click', async e => {
   if (e.target.id !== 'copyTrips') return;
@@ -1712,6 +1759,7 @@ function route() {
     form.querySelector('input[name=event][value=start]').checked = true;
     resetForm();
     render();
+    updateResume();
   }
   window.scrollTo({ top: 0 });
 }

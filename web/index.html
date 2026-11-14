@@ -681,13 +681,22 @@ async function apiGet() {
   const r = await fetch(API_URL + '?action=getData', { cache: 'no-store' });
   return unwrap(await r.json());
 }
+// ตั้งเวลารอไว้ 25 วินาที กันป๊อปอัพกำลังบันทึกค้างถ้าเซิร์ฟเวอร์ไม่ตอบ
 async function apiPost(payload) {
-  const r = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-  });
-  return unwrap(await r.json());
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 25000);
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      signal: ctl.signal,
+    });
+    return unwrap(await r.json());
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('เซิร์ฟเวอร์ตอบช้าเกินไป ลองใหม่อีกครั้ง');
+    throw err;
+  } finally { clearTimeout(timer); }
 }
 function unwrap(j) {
   if (!j.ok) throw new Error(j.error || 'unknown error');
@@ -1133,8 +1142,9 @@ form.addEventListener('submit', async e => {
     entry.full = $('full').checked ? 1 : '';
   }
 
+  // รอ GPS ไม่เกิน 2 วินาที ถ้าช้าก็บันทึกโดยไม่มีพิกัด ไม่ให้ค้างทั้งแอป
   msg('กำลังหาตำแหน่ง…');
-  const p = await getPos();
+  const p = await Promise.race([getPos(), new Promise(r => setTimeout(() => r(null), 2000))]);
   entry.lat = p ? p.lat : '';
   entry.lng = p ? p.lng : '';
 

@@ -261,6 +261,11 @@
   .bar { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, #6ee7b7, #7dd3fc); transition: width .5s cubic-bezier(.2,.7,.2,1); }
   .bar-row.alt .bar i { background: linear-gradient(90deg, #fcd34d, #fda4af); }
+  .socwrap { grid-column: 1 / -1; }
+  .socbar { position: relative; height: 14px; margin-top: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+  .socbar i { position: absolute; top: 0; bottom: 0; display: block; }
+  .socbar .s-before { left: 0; background: #7dd3fc; }
+  .socbar .s-gain { background: #6ee7b7; }
   .cmp-note, .time-line { font-size: 12.5px; color: var(--muted); margin: 0; }
   .time-line b { color: var(--text-2); font-weight: 500; font-family: var(--mono); }
 
@@ -1494,6 +1499,15 @@ function legHtml(s) {
     </div>`;
 }
 
+// แถบหลอดแบต: ซ้ายสุด 0% ขวาสุด 100%
+// 0 → ก่อนชาร์จ = ฟ้า · ก่อน → หลังชาร์จ = เขียว · หลังชาร์จ → 100 = ไม่มีสี
+function socBar(before, after) {
+  if (before == null || after == null) return '';
+  const a = Math.max(0, Math.min(100, before));
+  const b = Math.max(a, Math.min(100, after));
+  return `<div class="socbar" title="${f(a, 0)}% → ${f(b, 0)}%"><i class="s-before" style="width:${a}%"></i><i class="s-gain" style="left:${a}%;width:${b - a}%"></i></div>`;
+}
+
 function chHtml(c) {
   const u = U();
   const isFuel = V === 'fuel';
@@ -1508,15 +1522,12 @@ function chHtml(c) {
           ? `<div><span>จำนวน</span><b>${f(c.en, 2)} ลิตร</b></div>
              <div><span>ราคา</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>
              <div><span>เติม</span><b>${c.full ? 'เต็มถัง' : 'ไม่เต็ม'}</b></div>`
-          : `<div><span>แบต</span><b>${f(c.socBefore, 0)} → ${f(c.socAfter, 0)}%</b></div>
+          : `<div class="socwrap"><span>แบต</span>${socBar(c.socBefore, c.socAfter)}</div>
              <div><span>เวลาชาร์จ</span><b>${fmtDur(c.minutes)}</b></div>
              <div><span>พลังงาน</span><b>${c.en === null ? '–' : f(c.en, 2) + ' kWh'}</b></div>
              <div><span>ค่าชาร์จ</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>`}
         <div><span>ราคาต่อหน่วย</span><b>${perUnit}</b></div>
       </div>
-      ${!isFuel && c.socBefore != null && c.socAfter != null && c.socAfter >= c.socBefore
-        ? `<div class="bar" title="${f(c.socBefore, 0)}% → ${f(c.socAfter, 0)}%" style="margin-top:10px"><i style="margin-left:${Math.max(0, Math.min(100, c.socBefore))}%;width:${Math.max(0, Math.min(100, c.socAfter) - Math.max(0, Math.min(100, c.socBefore)))}%"></i></div>`
-        : ''}
     </div>`;
 }
 

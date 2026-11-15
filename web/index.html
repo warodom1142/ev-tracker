@@ -813,6 +813,7 @@ function buildTrips(list, segs, refs, rests = []) {
       km, used,
       firstId: g[0].id,
       driveMin: sum(ss.map(s => s.minutes)),
+      kmh: sum(ss.map(s => s.minutes)) > 0 ? km / (sum(ss.map(s => s.minutes)) / 60) : null,
       restMin: sum(rs.map(r => r.minutes)),
       cons: vkm > 0 ? (used / vkm) * 100 : null,
       charges: rr.length,
@@ -1243,6 +1244,8 @@ function groupStats(group, res) {
     screenAvg: avg(cmp.map(s => s.screenFull)),
     actualAvg: avg(cmp.map(s => s.actualFull)),
     missing: cs.length - costed.length,
+    // ความเร็วเฉลี่ยตอนขับ (ไม่รวมพัก และไม่รวมเวลาชาร์จ/เติม)
+    kmh: sum(ss.map(s => s.minutes)) > 0 ? km / (sum(ss.map(s => s.minutes)) / 60) : null,
   };
 }
 
@@ -1255,6 +1258,7 @@ function statTiles(g) {
       ['ชาร์จรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'],
       ['พลังงานที่ใช้', f(g.used, 1), 'kWh'],
       ['เวลาชาร์จ', fmtDur(g.chMin), ''],
+      ['ความเร็วเฉลี่ย', g.kmh === null ? '–' : f(g.kmh, 0), 'km/h'],
     ];
   }
   return [
@@ -1264,6 +1268,7 @@ function statTiles(g) {
     ['ค่าน้ำมันรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'],
     ['น้ำมันที่ใช้ (ประมาณ)', f(g.used, 1), 'ลิตร'],
     ['km / ลิตร', g.kmPerL ? f(g.kmPerL, 1) : '–', 'km/L'],
+    ['ความเร็วเฉลี่ย', g.kmh === null ? '–' : f(g.kmh, 0), 'km/h'],
   ];
 }
 
@@ -1393,6 +1398,7 @@ function tripSummaryText(trips) {
     return [
       head,
       `ระยะทาง ${f(tr.km, 1)} km · ใช้ ${f(tr.cons, 1)} ${u.cons} · ${u.en} ${f(tr.used, 2)}`,
+      `ความเร็วเฉลี่ย ${tr.kmh === null ? '–' : f(tr.kmh, 0) + ' km/h'} (เวลาขับ ${fmtDur(tr.driveMin)})`,
       `${V === 'ev' ? 'ชาร์จ' : 'เติม'} ${tr.charges} ครั้ง ${f(tr.chEn, 2)} ${u.en} · ค่าใช้จ่าย ${tr.cost === null ? '–' : f(tr.cost, 0) + ' ฿'}`,
     ].join('\n');
   }).join('\n\n');

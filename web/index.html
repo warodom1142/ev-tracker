@@ -922,7 +922,9 @@ function analyzeEV(entries, st) {
       state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts, event: e.event, no: evNo };
     } else if (e.event === 'end') {
       // ทริปปิดแล้ว: ไม่นับระยะจากจุดสิ้นสุดไปยังทริปถัดไปเข้าทริปไหนเลย
+      // และเริ่มนับจุดชาร์จใหม่ตั้งแต่ 1 ในทริปถัดไป
       state = null;
+      chargeNo = 0;
     } else {
       state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event, no: undefined };
     }
@@ -1034,6 +1036,8 @@ function analyzeFuel(entries) {
     }
 
     // ทริปปิดแล้ว: ไม่นับระยะจากจุดสิ้นสุดไปยังทริปถัดไปเข้าทริปไหนเลย (anchor การเติมยังคงไว้)
+    // ทริปปิดแล้ว: เริ่มนับจุดเติมใหม่ตั้งแต่ 1 ในทริปถัดไป
+    if (e.event === 'end') refNo = 0;
     state = e.event === 'end' ? null : { odo, ts: e.ts, event: e.event, no: evNo };
   }
 

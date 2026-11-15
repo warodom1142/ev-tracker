@@ -266,6 +266,10 @@
   .socbar i { position: absolute; top: 0; bottom: 0; display: block; }
   .socbar .s-before { left: 0; background: #7dd3fc; }
   .socbar .s-gain { background: #6ee7b7; }
+  .socnums { position: relative; height: 18px; margin-top: 4px; font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .socnums span { position: absolute; top: 0; white-space: nowrap; }
+  .socnums .n-before { color: #7dd3fc; }
+  .socnums .n-after { color: #6ee7b7; }
   .cmp-note, .time-line { font-size: 12.5px; color: var(--muted); margin: 0; }
   .time-line b { color: var(--text-2); font-weight: 500; font-family: var(--mono); }
 
@@ -1505,7 +1509,13 @@ function socBar(before, after) {
   if (before == null || after == null) return '';
   const a = Math.max(0, Math.min(100, before));
   const b = Math.max(a, Math.min(100, after));
-  return `<div class="socbar" title="${f(a, 0)}% → ${f(b, 0)}%"><i class="s-before" style="width:${a}%"></i><i class="s-gain" style="left:${a}%;width:${b - a}%"></i></div>`;
+  // ป้ายตัวเลขอยู่ใต้หลอด ชิดขอบซ้าย/ขวาเมื่อใกล้ปลายเพื่อไม่ให้ล้นกรอบ
+  const lab = (v, cls) => {
+    const shift = v < 8 ? '0%' : v > 92 ? '-100%' : '-50%';
+    return `<span class="${cls}" style="left:${v}%;transform:translateX(${shift})">${f(v, 0)}%</span>`;
+  };
+  return `<div class="socbar" title="${f(a, 0)}% → ${f(b, 0)}%"><i class="s-before" style="width:${a}%"></i><i class="s-gain" style="left:${a}%;width:${b - a}%"></i></div>
+    <div class="socnums">${lab(a, 'n-before')}${b > a ? lab(b, 'n-after') : ''}</div>`;
 }
 
 function chHtml(c) {

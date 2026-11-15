@@ -1514,6 +1514,9 @@ function chHtml(c) {
              <div><span>ค่าชาร์จ</span><b>${c.cost === null ? '–' : f(c.cost, 0) + ' ฿'}</b></div>`}
         <div><span>ราคาต่อหน่วย</span><b>${perUnit}</b></div>
       </div>
+      ${!isFuel && c.socBefore != null && c.socAfter != null && c.socAfter >= c.socBefore
+        ? `<div class="bar" title="${f(c.socBefore, 0)}% → ${f(c.socAfter, 0)}%" style="margin-top:10px"><i style="margin-left:${Math.max(0, Math.min(100, c.socBefore))}%;width:${Math.max(0, Math.min(100, c.socAfter) - Math.max(0, Math.min(100, c.socBefore)))}%"></i></div>`
+        : ''}
     </div>`;
 }
 

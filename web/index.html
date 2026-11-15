@@ -567,7 +567,7 @@
 
     <section class="card">
       <div class="card-h"><h2 class="k-amber" data-ico="🧭">ทริป</h2><span id="tripCount"></span></div>
-      <div style="padding:10px 18px 0"><button id="copyTrips" class="del" style="margin-top:0" type="button">📋 คัดลอกสรุปทริป</button></div>
+      <div style="padding:10px 18px 0;display:flex;gap:8px;flex-wrap:wrap"><button id="copyTrips" class="del" style="margin-top:0" type="button">📋 คัดลอกสรุปทริป</button><button id="shareTrip" class="del" style="margin-top:0" type="button">🖼️ แชร์รูปทริป (LINE)</button></div>
       <div id="trips" style="padding-top:8px"></div>
     </section>
 
@@ -1397,6 +1397,143 @@ function tripSummaryText(trips) {
     ].join('\n');
   }).join('\n\n');
 }
+
+/* ---------- แชร์สรุปทริปเป็นรูปภาพ (ส่งเข้า LINE ผ่านเมนูแชร์ของมือถือ) ---------- */
+function rrPath(x, px, py, w, h, r) {
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py, r);
+  x.arcTo(px, py, px + w, py, r);
+  x.closePath();
+}
+
+function drawTripCanvas(g, gs, pts) {
+  const W = 1080, H = 1350;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const FONT = '"IBM Plex Sans Thai", "Noto Sans Thai", system-ui, sans-serif';
+  const MONO = '"IBM Plex Mono", ui-monospace, monospace';
+  x.fillStyle = '#0b0d12';
+  x.fillRect(0, 0, W, H);
+
+  // หัวเรื่อง
+  x.textBaseline = 'top';
+  x.fillStyle = '#f5f5f4';
+  x.font = `700 60px ${FONT}`;
+  x.fillText(g[0].tripName || 'สรุปทริป', 60, 56);
+  x.fillStyle = '#8a8f98';
+  x.font = `400 32px ${FONT}`;
+  const last = g[g.length - 1].ts;
+  x.fillText(`${fmtDate(g[0].ts)} – ${fmtTime(last)} · ${f(gs.km, 1)} km`, 60, 136);
+
+  // ภาพรวม 6 ช่อง (2 คอลัมน์ x 3 แถว)
+  statTiles(gs).forEach(([label, val, unit], i) => {
+    const tx = 60 + (i % 2) * 500, ty = 210 + Math.floor(i / 2) * 170;
+    rrPath(x, tx, ty, 480, 150, 26);
+    x.fillStyle = '#16181f';
+    x.fill();
+    x.textBaseline = 'top';
+    x.fillStyle = '#8a8f98';
+    x.font = `400 26px ${FONT}`;
+    x.fillText(label, tx + 26, ty + 22);
+    x.fillStyle = '#f5f5f4';
+    x.font = `600 52px ${MONO}`;
+    x.fillText(val, tx + 26, ty + 62);
+    if (unit) {
+      const w = x.measureText(val + ' ').width;
+      x.fillStyle = '#8a8f98';
+      x.font = `400 26px ${FONT}`;
+      x.fillText(unit, tx + 26 + w, ty + 86);
+    }
+  });
+
+  // เส้นทาง
+  const RY = 800, RH = 440;
+  rrPath(x, 60, RY, 960, RH, 26);
+  x.fillStyle = '#16181f';
+  x.fill();
+  if (pts.length) {
+    const lats = pts.map(p => num(p.lat)), lngs = pts.map(p => num(p.lng));
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const k = Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
+    const P = 90;
+    const spanX = Math.max((maxLng - minLng) * k, 1e-5);
+    const spanY = Math.max(maxLat - minLat, 1e-5);
+    const s = Math.min((960 - 2 * P) / spanX, (RH - 2 * P) / spanY);
+    const ox = 60 + (960 - spanX * s) / 2, oy = RY + (RH - spanY * s) / 2;
+    const xy = p => [ox + (num(p.lng) - minLng) * k * s, oy + (maxLat - num(p.lat)) * s];
+    const coords = pts.map(xy);
+    x.strokeStyle = '#7dd3fc';
+    x.lineWidth = 8;
+    x.lineJoin = 'round';
+    x.beginPath();
+    coords.forEach((c, i) => (i ? x.lineTo(c[0], c[1]) : x.moveTo(c[0], c[1])));
+    x.stroke();
+    coords.forEach((c, i) => {
+      x.beginPath();
+      x.arc(c[0], c[1], 26, 0, Math.PI * 2);
+      x.fillStyle = EV_COLOR[pts[i].event] || '#ffffff';
+      x.fill();
+      x.fillStyle = '#08090c';
+      x.font = `700 28px ${FONT}`;
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.fillText(String(i + 1), c[0], c[1] + 1);
+      x.textAlign = 'left';
+    });
+  } else {
+    x.fillStyle = '#8a8f98';
+    x.font = `400 32px ${FONT}`;
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText('ทริปนี้ยังไม่มีพิกัด GPS', 540, RY + RH / 2);
+    x.textAlign = 'left';
+  }
+
+  // ท้ายรูป
+  x.textBaseline = 'top';
+  x.fillStyle = '#5b606b';
+  x.font = `400 26px ${FONT}`;
+  x.fillText('EV Tracker', 60, 1290);
+  return cv;
+}
+
+async function shareTripImage() {
+  const g = selGroup();
+  if (!g) return toast('ยังไม่มีทริปให้แชร์', true);
+  if (!lastRes) return toast('ข้อมูลยังไม่พร้อม ลองใหม่อีกครั้ง', true);
+  try {
+    const pts = stopsOf(g).filter(e => num(e.lat) !== null && num(e.lng) !== null);
+    const gs = groupStats(g, lastRes);
+    const cv = drawTripCanvas(g, gs, pts);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const name = (g[0].tripName || 'trip-summary') + '.png';
+    const file = new File([blob], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: g[0].tripName || 'สรุปทริป' });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;   // ผู้ใช้ยกเลิกเอง
+      }
+    }
+    // เบราว์เซอร์ที่ไม่รองรับการแชร์ไฟล์: ดาวน์โหลดรูปแทน
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    toast('บันทึกรูปแล้ว · ส่งเข้า LINE จากไฟล์ได้เลย');
+  } catch (err) {
+    toast('สร้างรูปไม่สำเร็จ', true);
+  }
+}
+$('shareTrip').addEventListener('click', shareTripImage);
 
 /* ---------- ลบทริปจากรายการทริป (กดสองครั้งเพื่อยืนยัน) ---------- */
 $('trips').addEventListener('click', async e => {

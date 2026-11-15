@@ -1644,6 +1644,7 @@ function legHtml(s) {
       <div class="kv">
         <div><span>ระยะทาง</span><b>${f(s.km, 1)} km</b></div>
         <div><span>เวลา</span><b>${fmtDur(s.minutes)}</b></div>
+        <div><span>ความเร็วเฉลี่ย</span><b>${s.minutes > 0 ? f(s.km / (s.minutes / 60), 0) + ' km/h' : '–'}</b></div>
         <div><span>${V === 'ev' ? 'พลังงานที่ใช้' : 'น้ำมัน (ประมาณ)'}</span><b>${s.en === null ? '–' : f(s.en, 2) + ' ' + u.en}</b></div>
         <div><span>อัตราการใช้</span><b>${s.cons === null ? '–' : (s.est ? '≈ ' : '') + f(s.cons, 1) + ' ' + u.cons}</b></div>
         <div><span>ค่าต่อ km</span><b>${s.costPerKm === null ? '–' : f(s.costPerKm, 2) + ' ฿'}</b></div>

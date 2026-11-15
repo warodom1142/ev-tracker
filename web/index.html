@@ -1255,25 +1255,24 @@ function groupStats(group, res) {
 }
 
 function statTiles(g) {
+  // เรียงเป็นคู่ ซ้ายไปขวา บนลงล่าง
+  const speed = ['ความเร็วเฉลี่ย', g.kmh === null ? '–' : f(g.kmh, 0), 'km/h'];
+  const dist = ['ระยะเดินทาง', f(g.km, 1), 'km'];
+  const time = ['เวลาเดินทาง', fmtDur(g.mins), ''];
+  const perKm = ['บาท/กม', f(g.costPerKm, 2), '฿'];
   if (V === 'ev') {
     return [
-      ['เวลาเดินทาง', fmtDur(g.mins), ''],
-      ['บาท/กม', f(g.costPerKm, 2), '฿'],
-      ['ชาร์จรวม', f(g.chEn, 1), 'kWh'],
-      ['ชาร์จรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'],
-      ['พลังงานที่ใช้', f(g.used, 1), 'kWh'],
-      ['เวลาชาร์จ', fmtDur(g.chMin), ''],
-      ['ความเร็วเฉลี่ย', g.kmh === null ? '–' : f(g.kmh, 0), 'km/h'],
+      dist, time,
+      ['ชาร์จรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'], perKm,
+      ['เวลาชาร์จ', fmtDur(g.chMin), ''], speed,
+      ['ชาร์จรวม', f(g.chEn, 1), 'kWh'], ['พลังงานที่ใช้', f(g.used, 1), 'kWh'],
     ];
   }
   return [
-    ['เวลาเดินทาง', fmtDur(g.mins), ''],
-    ['บาท/กม', f(g.costPerKm, 2), '฿'],
-    ['เติมรวม', f(g.chEn, 1), 'ลิตร'],
-    ['ค่าน้ำมันรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'],
-    ['น้ำมันที่ใช้ (ประมาณ)', f(g.used, 1), 'ลิตร'],
-    ['km / ลิตร', g.kmPerL ? f(g.kmPerL, 1) : '–', 'km/L'],
-    ['ความเร็วเฉลี่ย', g.kmh === null ? '–' : f(g.kmh, 0), 'km/h'],
+    dist, time,
+    ['ค่าน้ำมันรวม', g.cost === null ? '–' : f(g.cost, 0), '฿'], perKm,
+    speed, ['เติมรวม', f(g.chEn, 1), 'ลิตร'],
+    ['น้ำมันที่ใช้ (ประมาณ)', f(g.used, 1), 'ลิตร'], ['km / ลิตร', g.kmPerL ? f(g.kmPerL, 1) : '–', 'km/L'],
   ];
 }
 
@@ -1462,7 +1461,8 @@ function drawTripCanvas(g, gs, pts) {
   });
 
   // เส้นทาง
-  const RY = 800, RH = 440;
+  // ภาพรวม 8 ช่อง = 4 แถว ต้องจบก่อนกล่องเส้นทาง (แถวสุดท้ายจบที่ y≈870)
+  const RY = 910, RH = 370;
   rrPath(x, 60, RY, 960, RH, 26);
   x.fillStyle = '#16181f';
   x.fill();
@@ -1509,7 +1509,7 @@ function drawTripCanvas(g, gs, pts) {
   x.textBaseline = 'top';
   x.fillStyle = '#5b606b';
   x.font = `400 26px ${FONT}`;
-  x.fillText('EV Tracker', 60, 1290);
+  x.fillText('EV Tracker', 60, 1305);
   return cv;
 }
 

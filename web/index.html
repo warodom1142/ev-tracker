@@ -909,6 +909,9 @@ function analyzeEV(entries, st) {
       chargeNo++;
       addCharge(e.id, evNo, { ts: e.ts, soc }, e.ts, sa, e);
       state = { odo, soc: sa !== null ? sa : soc, range: null, ts: e.ts, event: e.event, no: evNo };
+    } else if (e.event === 'end') {
+      // ทริปปิดแล้ว: ไม่นับระยะจากจุดสิ้นสุดไปยังทริปถัดไปเข้าทริปไหนเลย
+      state = null;
     } else {
       state = { odo, soc, range: num(e.range), ts: e.ts, event: e.event, no: undefined };
     }
@@ -1019,7 +1022,8 @@ function analyzeFuel(entries) {
       }
     }
 
-    state = { odo, ts: e.ts, event: e.event, no: evNo };
+    // ทริปปิดแล้ว: ไม่นับระยะจากจุดสิ้นสุดไปยังทริปถัดไปเข้าทริปไหนเลย (anchor การเติมยังคงไว้)
+    state = e.event === 'end' ? null : { odo, ts: e.ts, event: e.event, no: evNo };
   }
 
   const ikm = sum(intervals.map(i => i.km));
